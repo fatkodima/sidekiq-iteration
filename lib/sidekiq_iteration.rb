@@ -21,6 +21,18 @@ module SidekiqIteration
     #   end
     #
     attr_accessor :max_job_runtime
+
+    # Set a custom logger for sidekiq-iteration.
+    # Defaults to `Sidekiq.logger`.
+    #
+    # @example
+    #   SidekiqIteration.logger = Logger.new("log/sidekiq-iteration.log")
+    #
+    attr_writer :logger
+
+    def logger
+      @logger ||= Sidekiq.logger
+    end
   end
 end
 

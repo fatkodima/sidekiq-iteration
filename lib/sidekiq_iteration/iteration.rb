@@ -112,7 +112,7 @@ module SidekiqIteration
 
         enumerator = build_enumerator(*arguments, cursor: cursor_position)
         unless enumerator
-          logger.info("[SidekiqIteration::Iteration] `build_enumerator` returned nil. Skipping the job.")
+          SidekiqIteration.logger.info("[SidekiqIteration::Iteration] `build_enumerator` returned nil. Skipping the job.")
           return
         end
 
@@ -153,7 +153,7 @@ module SidekiqIteration
         end
 
         unless found_record
-          logger.info(
+          SidekiqIteration.logger.info(
             "[SidekiqIteration::Iteration] Enumerator found nothing to iterate! " \
             "times_interrupted=#{times_interrupted} cursor_position=#{cursor_position}",
           )
@@ -164,7 +164,7 @@ module SidekiqIteration
       end
 
       def reenqueue_iteration_job
-        logger.info("[SidekiqIteration::Iteration] Interrupting and re-enqueueing the job cursor_position=#{cursor_position}")
+        SidekiqIteration.logger.info("[SidekiqIteration::Iteration] Interrupting and re-enqueueing the job cursor_position=#{cursor_position}")
 
         adjust_total_time
         @times_interrupted += 1
@@ -201,7 +201,7 @@ module SidekiqIteration
       end
 
       def output_interrupt_summary
-        logger.info(
+        SidekiqIteration.logger.info(
           format("[SidekiqIteration::Iteration] Completed iterating. times_interrupted=%d total_time=%.3f", times_interrupted, total_time),
         )
       end

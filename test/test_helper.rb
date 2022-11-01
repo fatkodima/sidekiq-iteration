@@ -19,7 +19,7 @@ logger =
 
 ActiveRecord::Base.logger = logger
 ActiveRecord::Migration.verbose = false
-Sidekiq.logger = logger
+SidekiqIteration.logger = logger
 
 ActiveRecord::Schema.define do
   create_table :products do |t|
@@ -67,11 +67,11 @@ class TestCase < Minitest::Test
   end
 
   def assert_logged(message)
-    old_logger = Sidekiq.logger
+    old_logger = SidekiqIteration.logger
     log = StringIO.new
     logger = Logger.new(log)
 
-    Sidekiq.logger = logger
+    SidekiqIteration.logger = logger
 
     begin
       yield
@@ -79,7 +79,7 @@ class TestCase < Minitest::Test
       log.rewind
       assert_match(message, log.read)
     ensure
-      Sidekiq.logger = old_logger
+      SidekiqIteration.logger = old_logger
     end
   end
 end
