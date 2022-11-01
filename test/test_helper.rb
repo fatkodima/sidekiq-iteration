@@ -6,6 +6,7 @@ require "minitest/autorun"
 require "sidekiq/testing"
 require "logger"
 require "sidekiq-iteration"
+require_relative "support/helpers"
 
 # This connection will do for database-independent bug reports.
 ActiveRecord::Base.establish_connection(adapter: "sqlite3", database: ":memory:")
@@ -19,7 +20,7 @@ logger =
 
 ActiveRecord::Base.logger = logger
 ActiveRecord::Migration.verbose = false
-SidekiqIteration.logger = logger
+Helpers.set_sidekiq_logger(logger)
 
 ActiveRecord::Schema.define do
   create_table :products do |t|
