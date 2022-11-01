@@ -80,6 +80,10 @@ module SidekiqIteration
     def on_start
     end
 
+    # A hook to override that will be called when the job resumes iterating.
+    def on_resume
+    end
+
     # A hook to override that will be called each time the job is interrupted.
     # This can be due to throttling (throttle enumerator), `max_job_runtime` configuration,
     # or sidekiq restarting.
@@ -141,6 +145,8 @@ module SidekiqIteration
 
         if executions == 1 && times_interrupted == 0
           on_start
+        else
+          on_resume
         end
 
         completed = catch(:abort) do

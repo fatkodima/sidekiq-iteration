@@ -10,6 +10,7 @@ module SidekiqIteration
 
       cattr_accessor :records_performed, default: []
       cattr_accessor :on_start_called, default: 0
+      cattr_accessor :on_resume_called, default: 0
       cattr_accessor :on_complete_called, default: 0
       cattr_accessor :on_shutdown_called, default: 0
       cattr_accessor :stop_after_count
@@ -22,6 +23,10 @@ module SidekiqIteration
 
       def on_start
         self.class.on_start_called += 1
+      end
+
+      def on_resume
+        self.class.on_resume_called += 1
       end
 
       def on_complete
@@ -38,6 +43,7 @@ module SidekiqIteration
       SimpleIterationJob.descendants.each do |klass|
         klass.records_performed = []
         klass.on_start_called = 0
+        klass.on_resume_called = 0
         klass.on_complete_called = 0
         klass.on_shutdown_called = 0
         klass.stop_after_count = nil
@@ -172,6 +178,7 @@ module SidekiqIteration
       assert_equal(1, BatchActiveRecordIterationJob.records_performed.size)
       assert_equal(3, BatchActiveRecordIterationJob.records_performed.flatten.size)
       assert_equal(1, BatchActiveRecordIterationJob.on_start_called)
+      assert_equal(0, BatchActiveRecordIterationJob.on_resume_called)
 
       job = peek_into_queue
       metadata = iteration_metadata(job)
@@ -183,6 +190,7 @@ module SidekiqIteration
       assert_equal(2, BatchActiveRecordIterationJob.records_performed.size)
       assert_equal(6, BatchActiveRecordIterationJob.records_performed.flatten.size)
       assert_equal(1, BatchActiveRecordIterationJob.on_start_called)
+      assert_equal(1, BatchActiveRecordIterationJob.on_resume_called)
 
       job = peek_into_queue
       metadata = iteration_metadata(job)
@@ -197,6 +205,7 @@ module SidekiqIteration
       assert_equal(10, BatchActiveRecordIterationJob.records_performed.flatten.size)
 
       assert_equal(1, BatchActiveRecordIterationJob.on_start_called)
+      assert_equal(2, BatchActiveRecordIterationJob.on_resume_called)
       assert_equal(1, BatchActiveRecordIterationJob.on_complete_called)
     end
 
