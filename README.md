@@ -191,6 +191,7 @@ end
 * [Iteration: how it works](guides/iteration-how-it-works.md)
 * [Best practices](guides/best-practices.md)
 * [Writing custom enumerator](guides/custom-enumerator.md)
+* [Throttling](guides/throttling.md)
 
 For more detailed documentation, see [rubydoc](https://rubydoc.info/gems/sidekiq-iteration).
 

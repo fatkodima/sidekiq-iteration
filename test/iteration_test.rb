@@ -14,6 +14,12 @@ module SidekiqIteration
       cattr_accessor :on_shutdown_called, default: 0
       cattr_accessor :stop_after_count
 
+      throttle_on do
+        stop_after_count &&
+          !records_performed.empty? &&
+          records_performed.size % stop_after_count == 0
+      end
+
       def on_start
         self.class.on_start_called += 1
       end
@@ -25,11 +31,6 @@ module SidekiqIteration
       def on_shutdown
         self.class.on_shutdown_called += 1
       end
-
-      private
-        def job_should_exit?
-          super || (stop_after_count && records_performed.size % stop_after_count == 0)
-        end
     end
 
     def setup

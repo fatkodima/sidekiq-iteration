@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative "throttling"
 require_relative "enumerators"
 
 module SidekiqIteration
@@ -9,11 +10,31 @@ module SidekiqIteration
     # @private
     def self.included(base)
       base.extend(ClassMethods)
+      base.extend(Throttling)
+
+      base.class_eval do
+        throttle_on(backoff: 0) do |job|
+          job.class.max_job_runtime &&
+            job.start_time &&
+            (Time.now.utc - job.start_time) > job.class.max_job_runtime
+        end
+
+        throttle_on(backoff: 0) do
+          defined?(Sidekiq::CLI) &&
+            Sidekiq::CLI.instance.launcher.stopping?
+        end
+      end
+
       super
     end
 
     # @private
     module ClassMethods
+      def inherited(base)
+        base.throttle_conditions = throttle_conditions.dup
+        super
+      end
+
       def method_added(method_name)
         if method_name == :perform
           raise "Job that is using Iteration cannot redefine #perform"
@@ -146,7 +167,9 @@ module SidekiqIteration
           each_iteration(object_from_enumerator, *arguments)
           @cursor_position = index
 
-          if job_should_exit?
+          throttle_condition = find_throttle_condition
+          if throttle_condition
+            @job_iteration_retry_backoff = throttle_condition.backoff
             @needs_reenqueue = true
             return false
           end
@@ -206,18 +229,10 @@ module SidekiqIteration
         )
       end
 
-      def job_should_exit?
-        if self.class.max_job_runtime &&
-           start_time &&
-           (Time.now.utc - start_time) > self.class.max_job_runtime
-          true
-        else
-          stopping?
+      def find_throttle_condition
+        self.class.throttle_conditions.find do |throttle_condition|
+          throttle_condition.valid?(self)
         end
-      end
-
-      def stopping?
-        defined?(Sidekiq::CLI) && Sidekiq::CLI.instance.launcher.stopping?
       end
 
       def handle_completed(completed)
