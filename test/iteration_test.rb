@@ -450,6 +450,35 @@ module SidekiqIteration
       LongRunningJob.remove_instance_variable(:@max_job_runtime)
     end
 
+    class ArrayJob < SimpleIterationJob
+      cattr_accessor :current_run_iterations, instance_accessor: false, default: []
+
+      def on_shutdown
+        self.class.current_run_iterations << current_run_iterations
+      end
+
+      def build_enumerator(cursor:)
+        array_enumerator(10.times.to_a, cursor: cursor)
+      end
+
+      def each_iteration(num)
+        self.class.records_performed << num
+      end
+    end
+
+    test "stores #current_run_iterations" do
+      iterate_exact_times(ArrayJob, 1)
+      ArrayJob.perform_inline
+
+      iterate_exact_times(ArrayJob, 3)
+      ArrayJob.perform_one
+
+      continue_iterating(ArrayJob)
+      ArrayJob.perform_one
+
+      assert_equal([1, 2, 7], ArrayJob.current_run_iterations)
+    end
+
     private
       def assert_jobs_in_queue(size)
         assert_equal(size, Sidekiq::Job.jobs.size)

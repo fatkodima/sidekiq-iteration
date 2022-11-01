@@ -58,7 +58,8 @@ module SidekiqIteration
       :cursor_position,
       :start_time,
       :times_interrupted,
-      :total_time
+      :total_time,
+      :current_run_iterations
 
     # @private
     def initialize
@@ -66,6 +67,7 @@ module SidekiqIteration
       @arguments = nil
       @job_iteration_retry_backoff = nil
       @needs_reenqueue = false
+      @current_run_iterations = 0
     end
 
     # @private
@@ -172,6 +174,7 @@ module SidekiqIteration
           found_record = true
           each_iteration(object_from_enumerator, *arguments)
           @cursor_position = index
+          @current_run_iterations += 1
 
           throttle_condition = find_throttle_condition
           if throttle_condition
