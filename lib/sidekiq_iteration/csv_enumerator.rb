@@ -59,7 +59,7 @@ module SidekiqIteration
     def batches(cursor:, batch_size: 100)
       @csv.lazy
         .each_slice(batch_size)
-        .each_with_index
+        .with_index
         .drop(count_of_processed_rows(cursor))
         .to_enum { (count_of_rows_in_file.to_f / batch_size).ceil }
     end

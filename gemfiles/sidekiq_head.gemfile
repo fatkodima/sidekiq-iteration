@@ -1,0 +1,5 @@
+# frozen_string_literal: true
+
+@sidekiq_requirement = { github: "mperham/sidekiq", branch: "main" }
+
+eval_gemfile "../Gemfile"

@@ -6,7 +6,7 @@ module SidekiqIteration
   class NestedEnumeratorTest < TestCase
     test "accepts only callables as enums" do
       assert_raises_with_message(ArgumentError, "enums must contain only procs/lambdas") do
-        build_enumerator(outer: [[1, 2, 3].each]).each
+        build_enumerator(outer: [[1, 2, 3].each])
       end
     end
 
@@ -17,13 +17,13 @@ module SidekiqIteration
     end
 
     test "yields enumerator when called without a block" do
-      enum = build_enumerator.each
+      enum = build_enumerator
       assert enum.is_a?(Enumerator)
       assert_nil enum.size
     end
 
     test "yields every nested record with their cursor position" do
-      enum = build_enumerator.each
+      enum = build_enumerator
 
       products = Product.includes(:comments).order(:id).take(3)
       comments = products.map do |product|
@@ -38,11 +38,11 @@ module SidekiqIteration
     end
 
     test "cursor can be used to resume" do
-      enum = build_enumerator.each
+      enum = build_enumerator
       _first_comment, first_cursor = enum.next
       second_comment, second_cursor = enum.next
 
-      enum = build_enumerator(cursor: first_cursor).each
+      enum = build_enumerator(cursor: first_cursor)
       assert_equal([second_comment, second_cursor], enum.first)
     end
 

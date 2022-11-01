@@ -12,3 +12,9 @@ gem "rubocop", "< 2"
 gem "rubocop-minitest", "~> 0.22"
 gem "sqlite3", "~> 1.5"
 gem "activerecord", "~> 7.0"
+
+if defined?(@sidekiq_requirement)
+  gem "sidekiq", @sidekiq_requirement
+else
+  gem "sidekiq" # latest
+end
