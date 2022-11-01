@@ -1,0 +1,6 @@
+--no-private
+--fail-on-warning
+--markup markdown
+--exclude lib/sidekiq_iteration/job_retry_patch.rb
+lib/**/**.rb
+- README.md guides/**.md
