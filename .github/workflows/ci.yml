@@ -1,0 +1,38 @@
+name: CI
+on: [push, pull_request]
+
+jobs:
+  # Run the linter first for rapid feedback if some trivial stylistic issues
+  # slipped through the cracks.
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.1.0
+          bundler-cache: true
+      - run: bundle exec rubocop
+
+  test:
+    needs: lint
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis
+        ports:
+        - 6379:6379
+    strategy:
+      matrix:
+        ruby: ["2.7", "3.0", "3.1"]
+        gemfile: [sidekiq_6, sidekiq_7, sidekiq_head]
+    env:
+      BUNDLE_GEMFILE: gemfiles/${{ matrix.gemfile }}.gemfile
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: true
+      - name: Run the test suite
+        run: bundle exec rake test

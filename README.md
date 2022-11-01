@@ -1,5 +1,7 @@
 # Sidekiq Iteration
 
+[![Build Status](https://github.com/fatkodima/sidekiq-iteration/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/fatkodima/sidekiq-iteration/actions/workflows/ci.yml)
+
 Meet Iteration, an extension for [Sidekiq](https://github.com/mperham/sidekiq) that makes your jobs interruptible and resumable, saving all progress that the job has made (aka checkpoint for jobs).
 
 ## Background
@@ -25,6 +27,11 @@ With frequent deploys and worker restarts, it would mean that a job will be eith
 Cloud environments are also unpredictable, and there's no way to guarantee that a single job will have reserved hardware to run for hours and days. What if AWS diagnosed the instance as unhealthy and will restart it in 5 minutes? All job progress will be lost.
 
 Software that is designed for high availability [must be resilient](https://12factor.net/disposability) to interruptions that come from the infrastructure. That's exactly what Iteration brings to Sidekiq.
+
+## Requirements
+
+- Ruby 2.7+ (if you need support for older ruby, [open an issue](https://github.com/fatkodima/sidekiq-iteration/issues/new))
+- Sidekiq 6+
 
 ## Getting started
 
