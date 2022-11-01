@@ -1,0 +1,12 @@
+/.bundle/
+/.yardoc
+/_yardoc/
+/coverage/
+/doc/
+/pkg/
+/tmp/
+.ruby-version
+gemfiles/*.lock
+/debug.log*
+dump.rdb
+.byebug_history

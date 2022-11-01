@@ -1,0 +1,124 @@
+require: rubocop-minitest
+
+AllCops:
+  TargetRubyVersion: 2.5
+  NewCops: enable
+  SuggestExtensions: false
+
+Style/StringLiterals:
+  EnforcedStyle: double_quotes
+
+Style/RescueModifier:
+  Exclude:
+    - test/**/*
+
+Style/IfUnlessModifier:
+  Enabled: false
+
+Style/SymbolArray:
+  EnforcedStyle: brackets
+
+Style/WordArray:
+  EnforcedStyle: brackets
+
+Style/GuardClause:
+  Enabled: false
+
+Style/Next:
+  Enabled: false
+
+Style/Documentation:
+  Enabled: false
+
+Style/MutableConstant:
+  Enabled: false
+
+Style/MissingRespondToMissing:
+  Enabled: false
+
+Style/TrailingCommaInHashLiteral:
+  EnforcedStyleForMultiline: comma
+
+Style/TrailingCommaInArrayLiteral:
+  EnforcedStyleForMultiline: comma
+
+Style/TrailingCommaInArguments:
+  EnforcedStyleForMultiline: comma
+
+Style/NumericPredicate:
+  Enabled: false
+
+Style/NegatedIf:
+  Enabled: false
+
+Style/Lambda:
+  EnforcedStyle: literal
+
+Style/WhileUntilModifier:
+  Enabled: false
+
+Style/HashAsLastArrayItem:
+  Enabled: false
+
+# only for ruby 2.6+
+Style/MapToHash:
+  Enabled: false
+
+Style/EmptyMethod:
+  Enabled: false
+
+Style/FormatStringToken:
+  Enabled: false
+
+Style/MultipleComparison:
+  Enabled: false
+
+Lint/MissingSuper:
+  Enabled: false
+
+Layout/EmptyLinesAroundAccessModifier:
+  EnforcedStyle: only_before
+
+Layout/IndentationConsistency:
+  EnforcedStyle: indented_internal_methods
+
+Layout/ArgumentAlignment:
+  Enabled: false
+
+Layout/LineLength:
+  Enabled: false
+
+Layout/MultilineMethodCallIndentation:
+  Enabled: false
+
+Layout/HashAlignment:
+  Enabled: false
+
+Naming/FileName:
+  Exclude:
+    - lib/sidekiq-iteration.rb
+
+Gemspec/RequiredRubyVersion:
+  Enabled: false
+
+Gemspec/RequireMFA:
+  Enabled: false
+
+Naming/AccessorMethodName:
+  Exclude:
+    - test/**/*
+
+Metrics:
+  Enabled: false
+
+Bundler/OrderedGems:
+  Enabled: false
+
+Minitest/MultipleAssertions:
+  Enabled: false
+
+Minitest/RefuteFalse:
+  Enabled: false
+
+Minitest/AssertPredicate:
+  Enabled: false

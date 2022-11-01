@@ -1,0 +1,81 @@
+PATH
+  remote: .
+  specs:
+    sidekiq-iteration (0.1.0)
+      sidekiq (>= 6.0)
+
+GEM
+  remote: https://rubygems.org/
+  specs:
+    activemodel (7.0.4)
+      activesupport (= 7.0.4)
+    activerecord (7.0.4)
+      activemodel (= 7.0.4)
+      activesupport (= 7.0.4)
+    activesupport (7.0.4)
+      concurrent-ruby (~> 1.0, >= 1.0.2)
+      i18n (>= 1.6, < 2)
+      minitest (>= 5.1)
+      tzinfo (~> 2.0)
+    ast (2.4.2)
+    concurrent-ruby (1.1.10)
+    connection_pool (2.3.0)
+    i18n (1.12.0)
+      concurrent-ruby (~> 1.0)
+    json (2.6.2)
+    mini_portile2 (2.8.0)
+    minitest (5.16.3)
+    parallel (1.22.1)
+    parser (3.1.2.1)
+      ast (~> 2.4.1)
+    rack (2.2.4)
+    rainbow (3.1.1)
+    rake (12.3.3)
+    redis (4.8.0)
+    regexp_parser (2.6.0)
+    rexml (3.2.5)
+    rubocop (1.37.0)
+      json (~> 2.3)
+      parallel (~> 1.10)
+      parser (>= 3.1.2.1)
+      rainbow (>= 2.2.2, < 4.0)
+      regexp_parser (>= 1.8, < 3.0)
+      rexml (>= 3.2.5, < 4.0)
+      rubocop-ast (>= 1.22.0, < 2.0)
+      ruby-progressbar (~> 1.7)
+      unicode-display_width (>= 1.4.0, < 3.0)
+    rubocop-ast (1.22.0)
+      parser (>= 3.1.1.0)
+    rubocop-minitest (0.22.2)
+      rubocop (>= 0.90, < 2.0)
+    ruby-progressbar (1.11.0)
+    sidekiq (6.5.7)
+      connection_pool (>= 2.2.5)
+      rack (~> 2.0)
+      redis (>= 4.5.0, < 5)
+    sqlite3 (1.5.3)
+      mini_portile2 (~> 2.8.0)
+    sqlite3 (1.5.3-x86_64-darwin)
+    tzinfo (2.0.5)
+      concurrent-ruby (~> 1.0)
+    unicode-display_width (2.3.0)
+    webrick (1.7.0)
+    yard (0.9.28)
+      webrick (~> 1.7.0)
+
+PLATFORMS
+  ruby
+  x86_64-darwin-20
+
+DEPENDENCIES
+  activerecord (~> 7.0)
+  minitest (~> 5.16)
+  rake (~> 12.0)
+  rubocop (< 2)
+  rubocop-minitest (~> 0.22)
+  sidekiq-iteration!
+  sqlite3 (~> 1.5)
+  yard (~> 0.9.28)
+
+BUNDLED WITH
+   2.3.22
