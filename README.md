@@ -186,6 +186,30 @@ class CsvJob
 end
 ```
 
+### Nested iteration
+
+```ruby
+class NestedIterationJob
+  include Sidekiq::Job
+  include SidekiqIteration::Iteration
+
+  def build_enumerator(cursor:)
+    nested_enumerator(
+      [
+        ->(cursor) { active_record_records_enumerator(Shop.all, cursor: cursor) },
+        ->(shop, cursor) { active_record_records_enumerator(shop.products, cursor: cursor) },
+        ->(_shop, product, cursor) { active_record_relations_enumerator(product.product_variants, cursor: cursor) }
+      ],
+      cursor: cursor
+    )
+  end
+
+  def each_iteration(product_variants_relation)
+    # do something
+  end
+end
+```
+
 ## Guides
 
 * [Iteration: how it works](guides/iteration-how-it-works.md)
@@ -211,7 +235,7 @@ Iteration job must respond to `build_enumerator` and `each_iteration` methods. `
 
 **Why is it important that `each_iteration` takes less than 30 seconds?** When the job worker is scheduled for restart or shutdown, it gets a notice to finish remaining unit of work. To guarantee that no progress is lost we need to make sure that `each_iteration` completes within a reasonable amount of time.
 
-**What do I do if each iteration takes a long time, because it's doing nested operations?** If your `each_iteration` is complex, we recommend enqueuing another job, which will run your nested business logic.
+**What do I do if each iteration takes a long time, because it's doing nested operations?** If your `each_iteration` is complex, we recommend enqueuing another job, which will run your nested business logic. If `each_iteration` performs some other iterations, like iterating over child records, consider using [nested iterations](#nested-iteration).
 
 **My job has a complex flow. How do I write my own Enumerator?** See [the guide on Custom Enumerators](guides/custom-enumerator.md) for details.
 

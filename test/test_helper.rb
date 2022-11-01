@@ -26,16 +26,32 @@ ActiveRecord::Schema.define do
     t.string :name
     t.timestamps
   end
+
+  create_table :comments do |t|
+    t.string :content
+    t.belongs_to :product
+  end
 end
 
 class Product < ActiveRecord::Base
   has_many :comments
 end
 
+class Comment < ActiveRecord::Base
+  belongs_to :product
+end
+
 def insert_fixtures
   now = Time.now
   products = 10.times.map { |i| { name: "Apple #{i}", created_at: now - i, updated_at: now - i } }
   Product.insert_all!(products)
+
+  comments = Product.order(:id).limit(3).map.with_index do |product, index|
+    comments_count = index + 1
+    comments_count.times.map { |i| { content: "#{product.name} comment ##{i}", product_id: product.id } }
+  end.flatten
+
+  Comment.insert_all!(comments)
 end
 
 insert_fixtures
