@@ -2,7 +2,7 @@
 
 [![Build Status](https://github.com/fatkodima/sidekiq-iteration/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/fatkodima/sidekiq-iteration/actions/workflows/ci.yml)
 
-Meet Iteration, an extension for [Sidekiq](https://github.com/mperham/sidekiq) that makes your jobs interruptible and resumable, saving all progress that the job has made (aka checkpoint for jobs).
+Meet Iteration, an extension for [Sidekiq](https://github.com/mperham/sidekiq) that makes your long-running jobs interruptible and resumable, saving all progress that the job has made (aka checkpoint for jobs).
 
 ## Background
 
@@ -136,10 +136,10 @@ class BatchesJob
 end
 ```
 
-### Iterating over batches of Active Record Relations
+### Iterating over Active Record Relations
 
 ```ruby
-class BatchesAsRelationJob
+class RelationsJob
   include Sidekiq::Job
   include SidekiqIteration::Iteration
 
@@ -151,14 +151,14 @@ class BatchesAsRelationJob
     )
   end
 
-  def each_iteration(batch_of_comments, product_id)
-    # batch_of_comments will be a Comment::ActiveRecord_Relation
-    batch_of_comments.update_all(deleted: true)
+  def each_iteration(comments_relation, product_id)
+    # comments_relation will be a Comment::ActiveRecord_Relation
+    comments_relation.update_all(deleted: true)
   end
 end
 ```
 
-### Iterating over arrays
+### Iterating over arbitrary arrays
 
 ```ruby
 class ArrayJob
@@ -228,9 +228,14 @@ For more detailed documentation, see [rubydoc](https://rubydoc.info/gems/sidekiq
 
 ## API
 
-Iteration job must respond to `build_enumerator` and `each_iteration` methods. `build_enumerator` must return [`Enumerator`](https://ruby-doc.org/core-3.1.2/Enumerator.htmll) object that respects the `cursor` value.
+Iteration job must respond to `build_enumerator` and `each_iteration` methods. `build_enumerator` must return [`Enumerator`](https://ruby-doc.org/core-3.1.2/Enumerator.html) object that respects the `cursor` value.
 
 ## FAQ
+
+**Advantages of this pattern over splitting a large job into many small jobs?**
+* Having one job is easier for redis in terms of memory, time and # of requests needed for enqueuing.
+* It simplifies sidekiq monitoring, because you have a predictable number of jobs in the queues, instead of having thousands of them at one time and millions at another. Also easier to navigate its web UI.
+* You can stop/pause/delete just one job, if something goes wrong. With many jobs it is harder and can take a long time, if it is critical to stop it right now.
 
 **Why can't I just iterate in `#perform` method and do whatever I want?** You can, but then your job has to comply with a long list of requirements, such as the ones above. This creates leaky abstractions more easily, when instead we can expose a more powerful abstraction for developers without exposing the underlying infrastructure.
 
