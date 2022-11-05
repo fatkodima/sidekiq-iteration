@@ -23,13 +23,11 @@ module SidekiqIteration
     end
 
     test "yields every nested record with their cursor position" do
+      comments = Comment.order(:product_id, :id).map do |comment|
+        [comment, [comment.product_id, comment.id]]
+      end
+
       enum = build_enumerator
-
-      products = Product.includes(:comments).order(:id).take(3)
-      comments = products.map do |product|
-        product.comments.sort_by(&:id).map { |comment| [comment, [product.id, comment.id]] }
-      end.flatten(1)
-
       enum.each_with_index do |(comment, cursor), index|
         expected_comment, expected_cursor = comments[index]
         assert_equal(expected_comment, comment)
