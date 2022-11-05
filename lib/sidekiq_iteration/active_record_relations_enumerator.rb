@@ -1,9 +1,8 @@
 # frozen_string_literal: true
 
 module SidekiqIteration
-  # Batch Enumerator based on ActiveRecord Relation.
   # @private
-  class ActiveRecordBatchEnumerator
+  class ActiveRecordRelationsEnumerator
     include Enumerable
 
     SQL_DATETIME_WITH_NSEC = "%Y-%m-%d %H:%M:%S.%N"

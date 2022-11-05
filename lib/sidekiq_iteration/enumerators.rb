@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "active_record_enumerator"
-require_relative "active_record_batch_enumerator"
+require_relative "active_record_relations_enumerator"
 require_relative "csv_enumerator"
 require_relative "nested_enumerator"
 
@@ -115,7 +115,7 @@ module SidekiqIteration
     #   end
     #
     def active_record_relations_enumerator(scope, cursor:, **options)
-      ActiveRecordBatchEnumerator.new(scope, cursor: cursor, **options).each
+      ActiveRecordRelationsEnumerator.new(scope, cursor: cursor, **options).each
     end
 
     # Builds Enumerator from a CSV file.

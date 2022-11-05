@@ -3,7 +3,7 @@
 require "test_helper"
 
 module SidekiqIteration
-  class ActiveRecordBatchEnumeratorTest < TestCase
+  class ActiveRecordRelationsEnumeratorTest < TestCase
     SQL_TIME_FORMAT = "%Y-%m-%d %H:%M:%S.%N"
 
     test "#each yields batches as relation with the last record's cursor position" do
@@ -119,7 +119,7 @@ module SidekiqIteration
 
     private
       def build_enumerator(relation: Product.all, batch_size: 2, columns: nil, cursor: nil)
-        ActiveRecordBatchEnumerator.new(relation, batch_size: batch_size, columns: columns, cursor: cursor)
+        ActiveRecordRelationsEnumerator.new(relation, batch_size: batch_size, columns: columns, cursor: cursor)
       end
 
       def track_queries(&block)
