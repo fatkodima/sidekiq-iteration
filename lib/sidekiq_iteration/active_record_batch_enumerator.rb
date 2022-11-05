@@ -19,7 +19,6 @@ module SidekiqIteration
                        end
       @batch_size = batch_size
       @cursor = Array.wrap(cursor)
-      @initial_cursor = @cursor
       raise ArgumentError, "Must specify at least one column" if @columns.empty?
       if relation.joins_values.present? && !@columns.all?(/\./)
         raise ArgumentError, "You need to specify fully-qualified columns if you join a table"
@@ -58,10 +57,8 @@ module SidekiqIteration
         end
 
         cursor = cursor_values.last
-        unless cursor.present?
-          @cursor = @initial_cursor
-          return
-        end
+        return unless cursor.present?
+
         # The primary key was plucked, but original cursor did not include it, so we should remove it
         cursor.pop unless @primary_key_index
         @cursor = Array.wrap(cursor)
