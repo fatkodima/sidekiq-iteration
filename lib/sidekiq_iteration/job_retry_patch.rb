@@ -25,6 +25,6 @@ module SidekiqIteration
   end
 end
 
-if Sidekiq::JobRetry.instance_method(:process_retry)
+if Sidekiq::JobRetry.private_instance_methods.include?(:process_retry)
   Sidekiq::JobRetry.prepend(SidekiqIteration::JobRetryPatch)
 end
