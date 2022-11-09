@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Fix storing run metadata when the job fails for sidekiq < 6.5.2
+
 - Make enumerators resume from the last cursor position
 
   This fixes `NestedEnumerator` to work correctly. Previously, each intermediate enumerator

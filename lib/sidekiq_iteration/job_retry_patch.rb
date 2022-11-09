@@ -7,6 +7,17 @@ module SidekiqIteration
   module JobRetryPatch
     private
       def process_retry(jobinst, msg, queue, exception)
+        add_sidekiq_iteration_metadata(jobinst, msg)
+        super
+      end
+
+      # The method was renamed in https://github.com/mperham/sidekiq/commit/0676a5202e89aa9da4ad7991f4111b97a9d8a0a4.
+      def attempt_retry(jobinst, msg, queue, exception)
+        add_sidekiq_iteration_metadata(jobinst, msg)
+        super
+      end
+
+      def add_sidekiq_iteration_metadata(jobinst, msg)
         if jobinst.is_a?(Iteration)
           unless msg["args"].last.is_a?(Hash)
             msg["args"].push({})
@@ -19,12 +30,14 @@ module SidekiqIteration
             "total_time" => jobinst.total_time,
           }
         end
-
-        super
       end
   end
 end
 
-if Sidekiq::JobRetry.instance_method(:process_retry)
+if Sidekiq::JobRetry.private_method_defined?(:process_retry) ||
+   Sidekiq::JobRetry.private_method_defined?(:attempt_retry)
   Sidekiq::JobRetry.prepend(SidekiqIteration::JobRetryPatch)
+else
+  raise "Sidekiq #{Sidekiq::VERSION} removed the #process_retry method. " \
+        "Please open an issue at the `sidekiq-iteration` gem."
 end
