@@ -15,10 +15,8 @@ module SidekiqIteration
       cattr_accessor :on_shutdown_called, default: 0
       cattr_accessor :stop_after_count
 
-      throttle_on do
-        stop_after_count &&
-          !records_performed.empty? &&
-          records_performed.size % stop_after_count == 0
+      throttle_on do |job|
+        job.current_run_iterations == stop_after_count
       end
 
       def on_start
@@ -476,7 +474,7 @@ module SidekiqIteration
       continue_iterating(ArrayJob)
       ArrayJob.perform_one
 
-      assert_equal([1, 2, 7], ArrayJob.current_run_iterations)
+      assert_equal([1, 3, 6], ArrayJob.current_run_iterations)
     end
 
     private
