@@ -26,6 +26,8 @@ module SidekiqIteration
 
     test "#batches yields batches of records with the last record's cursor position" do
       enum = build_enumerator.batches
+      assert_equal(10, enum.size)
+
       products = Product.order(:id).take(4).each_slice(2).to_a
 
       enum.first(2).each_with_index do |(element, cursor), index|
@@ -36,6 +38,47 @@ module SidekiqIteration
     test "#batches doesn't yield anything if the relation is empty" do
       enum = build_enumerator(relation: Product.none).batches
       assert_empty(enum.to_a)
+    end
+
+    test "#relations yields relations with the last record's cursor position" do
+      enum = build_enumerator.relations
+      assert_equal(5, enum.size)
+
+      product_batches = Product.order(:id).take(4).in_groups_of(2).map { |products| [products, products.last.id] }
+
+      enum.first(2).each_with_index do |(batch, cursor), index|
+        assert_kind_of(ActiveRecord::Relation, batch)
+        assert_equal(product_batches[index], [batch, cursor])
+      end
+    end
+
+    test "#relations yields unloaded relations" do
+      enum = build_enumerator.relations
+      relation, = enum.first
+
+      assert_not(relation.loaded?)
+    end
+
+    test "#relations yields relations that preserve the existing conditions (like ActiveRecord::Batches)" do
+      enum = build_enumerator(relation: Product.where("name LIKE 'Apple%'")).relations
+      relation, = enum.first
+      assert_includes(relation.to_sql, "Apple")
+    end
+
+    test "#relations doesn't yield anything if the relation is empty" do
+      enum = build_enumerator(relation: Product.none).relations
+
+      assert_empty(enum.to_a)
+    end
+
+    test "#relations one query performed per batch, plus an additional one for the empty cursor" do
+      enum = build_enumerator.relations
+      num_batches = 0
+      queries = track_queries do
+        enum.each { num_batches += 1 }
+      end
+
+      assert_equal num_batches + 1, queries.size
     end
 
     test "batch size is configurable" do
@@ -59,6 +102,14 @@ module SidekiqIteration
       assert_equal([products, [products.last.updated_at.strftime(SQL_TIME_FORMAT), products.last.id]], enum.first)
     end
 
+    test "columns configured with primary key only queries primary key column once" do
+      queries = track_queries do
+        enum = build_enumerator(columns: [:updated_at, :id]).relations
+        enum.first
+      end
+      assert_match(/\ASELECT "products"."updated_at", "products"."id" FROM/i, queries.first)
+    end
+
     test "can be resumed" do
       first, middle, last = Product.order(:id).take(3)
       enum = build_enumerator(cursor: first.id).batches
@@ -80,15 +131,16 @@ module SidekiqIteration
       assert_equal([products, cursor], enum.first)
     end
 
-    test "#size returns the number of items in the relation" do
-      enum = build_enumerator
-
-      assert_equal(10, enum.size)
-    end
-
     private
       def build_enumerator(relation: Product.all, batch_size: 2, columns: nil, cursor: nil)
         ActiveRecordEnumerator.new(relation, batch_size: batch_size, columns: columns, cursor: cursor)
+      end
+
+      def track_queries(&block)
+        queries = []
+        query_cb = ->(*, payload) { queries << payload[:sql] }
+        ActiveSupport::Notifications.subscribed(query_cb, "sql.active_record", &block)
+        queries
       end
   end
 end
