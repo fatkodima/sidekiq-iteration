@@ -8,8 +8,12 @@ class IterationJob
     array_enumerator([0, 1, 2, 3], cursor: cursor)
   end
 
-  def each_iteration(omg)
-    if omg == 0 || omg == 2
+  def each_iteration(num)
+    stop_after_num = Sidekiq.redis do |conn|
+      conn.get("stop_after_num")
+    end
+
+    if stop_after_num && num == stop_after_num.to_i
       Process.kill("TERM", Process.pid)
     end
     sleep(1)

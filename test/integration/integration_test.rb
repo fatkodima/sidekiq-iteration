@@ -12,24 +12,29 @@ module SidekiqIteration
     end
 
     test "interrupts the job" do
-      IterationJob.perform_async
+      Sidekiq.redis do |conn|
+        IterationJob.perform_async
 
-      start_worker_and_wait
+        conn.set("stop_after_num", 0)
+        start_worker_and_wait
 
-      assert_equal(1, queue_size)
-      assert_equal(0, iteration_metadata["cursor_position"])
-      assert_equal(1, iteration_metadata["times_interrupted"])
+        assert_equal(1, queue_size)
+        assert_equal(0, iteration_metadata["cursor_position"])
+        assert_equal(1, iteration_metadata["times_interrupted"])
 
-      start_worker_and_wait
+        conn.set("stop_after_num", 2)
+        start_worker_and_wait
 
-      assert_equal(1, queue_size)
-      assert_equal(2, iteration_metadata["cursor_position"])
-      assert_equal(2, iteration_metadata["times_interrupted"])
+        assert_equal(1, queue_size)
+        assert_equal(2, iteration_metadata["cursor_position"])
+        assert_equal(2, iteration_metadata["times_interrupted"])
 
-      TerminateJob.perform_async
-      start_worker_and_wait
+        TerminateJob.perform_async
+        conn.del("stop_after_num")
+        start_worker_and_wait
 
-      assert_equal(0, queue_size)
+        assert_equal(0, queue_size)
+      end
     end
 
     test "failing iteration job" do
@@ -46,7 +51,7 @@ module SidekiqIteration
 
         start_worker_and_wait
 
-        assert_equal(5, iteration_metadata["cursor_position"])
+        assert_equal(4, iteration_metadata["cursor_position"])
         assert_equal(2, iteration_metadata["executions"])
         assert_equal(0, iteration_metadata["times_interrupted"])
         assert_equal(6, conn.llen("records_performed"))

@@ -4,7 +4,7 @@ require "test_helper"
 
 module SidekiqIteration
   class ActiveRecordEnumeratorTest < TestCase
-    SQL_TIME_FORMAT = "%Y-%m-%d %H:%M:%S.%N"
+    SQL_TIME_FORMAT = "%Y-%m-%d %H:%M:%S.%6N"
 
     test "#records yields every record with their cursor position" do
       enum = build_enumerator.records
@@ -111,10 +111,11 @@ module SidekiqIteration
     end
 
     test "can be resumed" do
-      first, middle, last = Product.order(:id).take(3)
-      enum = build_enumerator(cursor: first.id).batches
+      one, two, three, four = Product.order(:id).take(4)
+      enum = build_enumerator(cursor: one.id).batches
 
-      assert_equal([[middle, last], last.id], enum.first)
+      assert_equal([[one, two], two.id], enum.first)
+      assert_equal([[three, four], four.id], enum.first)
     end
 
     test "can be resumed on multiple columns" do
@@ -125,7 +126,7 @@ module SidekiqIteration
       assert_equal([products, cursor], enum.first)
 
       enum = build_enumerator(columns: [:created_at, :id], cursor: cursor).batches
-      products = Product.order(:created_at, :id).offset(2).take(2)
+      products = Product.order(:created_at, :id).offset(1).take(2)
 
       cursor = [products.last.created_at.strftime(SQL_TIME_FORMAT), products.last.id]
       assert_equal([products, cursor], enum.first)

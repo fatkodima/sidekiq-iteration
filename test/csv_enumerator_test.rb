@@ -25,7 +25,7 @@ module SidekiqIteration
       assert_instance_of(Enumerator::Lazy, enum)
 
       enum.each_with_index do |(element, cursor), index|
-        assert_equal([csv_rows[index + 4], index + 4], [element.fields, cursor])
+        assert_equal([csv_rows[index + 3], index + 3], [element.fields, cursor])
       end
     end
 
@@ -64,9 +64,9 @@ module SidekiqIteration
       enum = build_enumerator(products_csv).batches(batch_size: 3, cursor: 2)
       assert_instance_of(Enumerator::Lazy, enum)
 
-      expected_values = csv_rows.each_slice(3).drop(3).to_a
+      expected_values = csv_rows.each_slice(3).drop(2).to_a
       enum.each_with_index do |(element, cursor), index|
-        assert_equal([expected_values[index], index + 3], [element.map(&:fields), cursor])
+        assert_equal([expected_values[index], index + 2], [element.map(&:fields), cursor])
       end
     end
 

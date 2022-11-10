@@ -194,13 +194,14 @@ module SidekiqIteration
       metadata = iteration_metadata(job)
       assert_equal(2, metadata["times_interrupted"])
       assert_equal(2, metadata["executions"])
-      assert_equal(processed_records[5], metadata["cursor_position"])
+      assert_equal(processed_records[4], metadata["cursor_position"])
       continue_iterating(BatchActiveRecordIterationJob)
 
       BatchActiveRecordIterationJob.perform_one
       assert_jobs_in_queue(0)
       assert_equal(4, BatchActiveRecordIterationJob.records_performed.size)
-      assert_equal(10, BatchActiveRecordIterationJob.records_performed.flatten.size)
+      # 10 records + 2 times restarted and ran on the same records
+      assert_equal(12, BatchActiveRecordIterationJob.records_performed.flatten.size)
 
       assert_equal(1, BatchActiveRecordIterationJob.on_start_called)
       assert_equal(2, BatchActiveRecordIterationJob.on_resume_called)
@@ -251,15 +252,20 @@ module SidekiqIteration
 
         job = peek_into_queue
         last_processed_record = MultipleColumnsActiveRecordIterationJob.records_performed.last
-        expected = [last_processed_record.updated_at.strftime("%Y-%m-%d %H:%M:%S.%N"), last_processed_record.id]
+        expected = [last_processed_record.updated_at.strftime("%Y-%m-%d %H:%M:%S.%6N"), last_processed_record.id]
         metadata = iteration_metadata(job)
         assert_equal(expected, metadata["cursor_position"])
 
         assert_equal(iter * 3, MultipleColumnsActiveRecordIterationJob.records_performed.size)
       end
 
-      first_products = Product.all.order(:updated_at, :id).limit(9).to_a
-      assert_equal(first_products, MultipleColumnsActiveRecordIterationJob.records_performed)
+      products = Product.all.order(:updated_at, :id).to_a
+      expected = [
+        products[0], products[1], products[2], # first iteration
+        products[2], products[3], products[4], # second iteration
+        products[4], products[5], products[6]  # second iteration
+      ]
+      assert_equal(expected, MultipleColumnsActiveRecordIterationJob.records_performed)
     end
 
     class LimitActiveRecordIterationJob < SimpleIterationJob
@@ -459,22 +465,21 @@ module SidekiqIteration
         array_enumerator(10.times.to_a, cursor: cursor)
       end
 
-      def each_iteration(num)
-        self.class.records_performed << num
+      def each_iteration(*)
       end
     end
 
     test "stores #current_run_iterations" do
-      iterate_exact_times(ArrayJob, 1)
+      iterate_exact_times(ArrayJob, 1) # starts from 1-st record
       ArrayJob.perform_inline
 
-      iterate_exact_times(ArrayJob, 3)
+      iterate_exact_times(ArrayJob, 3) # starts from 1-st record
       ArrayJob.perform_one
 
-      continue_iterating(ArrayJob)
+      continue_iterating(ArrayJob) # starts from 3-rd record
       ArrayJob.perform_one
 
-      assert_equal([1, 3, 6], ArrayJob.current_run_iterations)
+      assert_equal([1, 3, 8], ArrayJob.current_run_iterations)
     end
 
     private

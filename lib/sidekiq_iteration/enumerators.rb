@@ -21,8 +21,7 @@ module SidekiqIteration
         raise ArgumentError, "array cannot contain ActiveRecord objects"
       end
 
-      drop = cursor ? cursor + 1 : 0
-      array.each_with_index.drop(drop).to_enum { array.size }
+      array.each_with_index.drop(cursor || 0).to_enum { array.size }
     end
 
     # Builds Enumerator from Active Record Relation. Each Enumerator tick moves the cursor one row forward.

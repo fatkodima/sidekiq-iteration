@@ -49,7 +49,7 @@ module SidekiqIteration
     def rows(cursor:)
       @csv.lazy
         .each_with_index
-        .drop(count_of_processed_rows(cursor))
+        .drop(cursor || 0)
         .to_enum { count_of_rows_in_file }
     end
 
@@ -60,7 +60,7 @@ module SidekiqIteration
       @csv.lazy
         .each_slice(batch_size)
         .with_index
-        .drop(count_of_processed_rows(cursor))
+        .drop(cursor || 0)
         .to_enum { (count_of_rows_in_file.to_f / batch_size).ceil }
     end
 
@@ -72,14 +72,6 @@ module SidekiqIteration
         count = `wc -l < #{filepath}`.strip.to_i
         count -= 1 if @csv.headers
         count
-      end
-
-      def count_of_processed_rows(cursor)
-        if cursor
-          cursor + 1
-        else
-          0
-        end
       end
   end
 end

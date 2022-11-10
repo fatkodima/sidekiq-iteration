@@ -3,7 +3,7 @@
 module SidekiqIteration
   # @private
   class ActiveRecordEnumerator
-    SQL_DATETIME_WITH_NSEC = "%Y-%m-%d %H:%M:%S.%N"
+    SQL_DATETIME_WITH_NSEC = "%Y-%m-%d %H:%M:%S.%6N"
 
     def initialize(relation, columns: nil, batch_size: 100, cursor: nil)
       unless relation.is_a?(ActiveRecord::Relation)
@@ -32,12 +32,14 @@ module SidekiqIteration
       end
 
       @base_relation = relation.reorder(@columns.join(", "))
+      @iteration_count = 0
     end
 
     def records
       Enumerator.new(-> { records_size }) do |yielder|
         batches.each do |batch, _|
           batch.each do |record|
+            @iteration_count += 1
             yielder.yield(record, cursor_value(record))
           end
         end
@@ -47,6 +49,7 @@ module SidekiqIteration
     def batches
       Enumerator.new(-> { records_size }) do |yielder|
         while (batch = next_batch(load: true))
+          @iteration_count += 1
           yielder.yield(batch, cursor_value(batch.last))
         end
       end
@@ -55,6 +58,7 @@ module SidekiqIteration
     def relations
       Enumerator.new(-> { relations_size }) do |yielder|
         while (batch = next_batch(load: false))
+          @iteration_count += 1
           yielder.yield(batch, unwrap_array(@cursor))
         end
       end
@@ -135,6 +139,15 @@ module SidekiqIteration
 
         binds = []
         sql = build_starts_after_conditions(0, binds)
+
+        # Start from the record pointed by cursor.
+        # We use the property that `>=` is equivalent to `> or =`.
+        if @iteration_count == 0
+          binds.unshift(*@cursor)
+          columns_equality = @columns.map { |column| "#{column} = ?" }.join(" AND ")
+          sql = "(#{columns_equality}) OR (#{sql})"
+        end
+
         [sql, *binds]
       end
 

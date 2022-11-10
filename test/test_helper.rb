@@ -43,13 +43,15 @@ class Comment < ActiveRecord::Base
 end
 
 def insert_fixtures
-  now = Time.now
-  products = 10.times.map { |i| { name: "Apple #{i}", created_at: now - i, updated_at: now - i } }
+  products = 10.times.map do |i|
+    time = (10 - i - 1).seconds.ago
+    { name: "Apple #{i + 1}", created_at: time, updated_at: time }
+  end
   Product.insert_all!(products)
 
   comments = Product.order(:id).limit(3).map.with_index do |product, index|
     comments_count = index + 1
-    comments_count.times.map { |i| { content: "#{product.name} comment ##{i}", product_id: product.id } }
+    comments_count.times.map { |i| { content: "#{product.name} comment ##{i + 1}", product_id: product.id } }
   end.flatten
 
   Comment.insert_all!(comments)

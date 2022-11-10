@@ -36,12 +36,17 @@ module SidekiqIteration
     end
 
     test "cursor can be used to resume" do
-      enum = build_enumerator
-      _first_comment, first_cursor = enum.next
-      second_comment, second_cursor = enum.next
+      comments = Comment.order(:product_id, :id).map do |comment|
+        [comment, [comment.product_id, comment.id]]
+      end
 
-      enum = build_enumerator(cursor: first_cursor)
-      assert_equal([second_comment, second_cursor], enum.first)
+      assert_equal(comments[0], build_enumerator.next)
+
+      comments.each_with_index do |(comment, cursor), index|
+        enum = build_enumerator(cursor: cursor)
+        assert_equal([comment, cursor], enum.next)
+        assert_equal(comments[index + 1], enum.next) unless index == comments.size - 1
+      end
     end
 
     test "doesn't yield anything if contains empty enum" do
