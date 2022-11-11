@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.2.0 (2022-11-11)
+
 - Fix storing run metadata when the job fails for sidekiq < 6.5.2
 
 - Make enumerators resume from the last cursor position
