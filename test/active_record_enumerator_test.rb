@@ -110,6 +110,22 @@ module SidekiqIteration
       assert_match(/\ASELECT "products"."updated_at", "products"."id" FROM/i, queries.first)
     end
 
+    test "order is configurable" do
+      enum = build_enumerator(order: :desc).batches
+      product_batches = Product.order(id: :desc).take(4).in_groups_of(2).map { |products| [products, products.last.id] }
+
+      enum.first(2).each_with_index do |(batch, cursor), index|
+        assert_equal(product_batches[index], [batch, cursor])
+      end
+    end
+
+    test "raises on invalid order" do
+      error = assert_raises(ArgumentError) do
+        build_enumerator(order: :invalid)
+      end
+      assert_equal ":order must be :asc or :desc, got :invalid", error.message
+    end
+
     test "can be resumed" do
       one, two, three, four = Product.order(:id).take(4)
       enum = build_enumerator(cursor: one.id).batches
@@ -133,8 +149,8 @@ module SidekiqIteration
     end
 
     private
-      def build_enumerator(relation: Product.all, batch_size: 2, columns: nil, cursor: nil)
-        ActiveRecordEnumerator.new(relation, batch_size: batch_size, columns: columns, cursor: cursor)
+      def build_enumerator(relation: Product.all, batch_size: 2, columns: nil, order: :asc, cursor: nil)
+        ActiveRecordEnumerator.new(relation, batch_size: batch_size, columns: columns, order: order, cursor: cursor)
       end
 
       def track_queries(&block)

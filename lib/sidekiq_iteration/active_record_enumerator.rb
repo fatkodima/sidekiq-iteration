@@ -5,9 +5,13 @@ module SidekiqIteration
   class ActiveRecordEnumerator
     SQL_DATETIME_WITH_NSEC = "%Y-%m-%d %H:%M:%S.%6N"
 
-    def initialize(relation, columns: nil, batch_size: 100, cursor: nil)
+    def initialize(relation, columns: nil, batch_size: 100, order: :asc, cursor: nil)
       unless relation.is_a?(ActiveRecord::Relation)
         raise ArgumentError, "relation must be an ActiveRecord::Relation"
+      end
+
+      unless order == :asc || order == :desc
+        raise ArgumentError, ":order must be :asc or :desc, got #{order.inspect}"
       end
 
       @primary_key = "#{relation.table_name}.#{relation.primary_key}"
@@ -19,6 +23,7 @@ module SidekiqIteration
                          @columns + [@primary_key]
                        end
       @batch_size = batch_size
+      @order = order
       @cursor = Array.wrap(cursor)
       raise ArgumentError, "Must specify at least one column" if @columns.empty?
       if relation.joins_values.present? && !@columns.all?(/\./)
@@ -31,7 +36,8 @@ module SidekiqIteration
           "You can use other ways to limit the number of rows, e.g. a WHERE condition on the primary key column."
       end
 
-      @base_relation = relation.reorder(@columns.join(", "))
+      ordering = @columns.to_h { |column| [column, @order] }
+      @base_relation = relation.reorder(ordering)
       @iteration_count = 0
     end
 
@@ -152,18 +158,19 @@ module SidekiqIteration
       end
 
       # (x, y) > (a, b) iff (x > a or (x = a and y > b))
+      # (x, y) < (a, b) iff (x < a or (x = a and y < b))
       def build_starts_after_conditions(index, binds)
         column = @columns[index]
 
         if index < @cursor.size - 1
           binds << @cursor[index] << @cursor[index]
-          "#{column} > ? OR (#{column} = ? AND (#{build_starts_after_conditions(index + 1, binds)}))"
+          "#{column} #{@order == :asc ? '>' : '<'} ? OR (#{column} = ? AND (#{build_starts_after_conditions(index + 1, binds)}))"
         else
           binds << @cursor[index]
           if @columns.size == @cursor.size
-            "#{column} > ?"
+            @order == :asc ? "#{column} > ?" : "#{column} < ?"
           else
-            "#{column} >= ?"
+            @order == :asc ? "#{column} >= ?" : "#{column} <= ?"
           end
         end
       end

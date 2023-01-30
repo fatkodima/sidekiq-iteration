@@ -31,6 +31,7 @@ module SidekiqIteration
     # @option options :columns [Array<String, Symbol>] used to build the actual query for iteration,
     #   defaults to primary key
     # @option options :batch_size [Integer] (100) size of the batch
+    # @option options :order [:asc, :desc] (:asc) specifies iteration order
     #
     # +columns:+ argument is used to build the actual query for iteration. +columns+: defaults to primary key:
     #

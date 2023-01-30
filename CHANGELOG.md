@@ -1,5 +1,11 @@
 ## master (unreleased)
 
+- Add ability to iterate Active Record enumerators in reverse order
+
+    ```ruby
+    active_record_records_enumerator(User.all, order: :desc)
+    ```
+
 ## 0.2.0 (2022-11-11)
 
 - Fix storing run metadata when the job fails for sidekiq < 6.5.2
