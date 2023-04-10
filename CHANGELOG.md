@@ -1,5 +1,11 @@
 ## master (unreleased)
 
+- Allow a default retry backoff to be configured
+
+    ```ruby
+    SidekiqIteration.default_retry_backoff = 10.seconds
+    ```
+
 - Add ability to iterate Active Record enumerators in reverse order
 
     ```ruby

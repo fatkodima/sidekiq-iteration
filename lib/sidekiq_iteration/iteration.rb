@@ -13,13 +13,13 @@ module SidekiqIteration
       base.extend(Throttling)
 
       base.class_eval do
-        throttle_on(backoff: 0) do |job|
+        throttle_on(backoff: SidekiqIteration.default_retry_backoff) do |job|
           job.class.max_job_runtime &&
             job.start_time &&
             (Time.now.utc - job.start_time) > job.class.max_job_runtime
         end
 
-        throttle_on(backoff: 0) do
+        throttle_on(backoff: SidekiqIteration.default_retry_backoff) do
           defined?(Sidekiq::CLI) &&
             Sidekiq::CLI.instance.launcher.stopping?
         end
@@ -71,7 +71,7 @@ module SidekiqIteration
     def initialize
       super
       @arguments = nil
-      @job_iteration_retry_backoff = nil
+      @job_iteration_retry_backoff = SidekiqIteration.default_retry_backoff
       @needs_reenqueue = false
       @current_run_iterations = 0
     end

@@ -8,8 +8,6 @@ module SidekiqIteration
       include Sidekiq::Job
       include SidekiqIteration::Iteration
 
-      extend Enumerators
-
       cattr_accessor :iterations_performed, default: []
       cattr_accessor :on_complete_called, default: 0
       cattr_accessor :should_throttle_sequence, default: []
@@ -56,6 +54,18 @@ module SidekiqIteration
       assert_equal(1, runs_metadata.fetch("times_interrupted"))
 
       assert_equal([1, 2], ThrottleJob.iterations_performed)
+    end
+
+    test "pushes job back to the queue with the configured throttle backoff" do
+      previous_backoff = SidekiqIteration.default_retry_backoff
+      ThrottleJob.should_throttle_sequence = [true]
+      ThrottleJob.perform_inline
+
+      enqueued = ThrottleJob.jobs
+      job = enqueued.first
+      assert_in_delta(Time.now.to_f + 30, job["at"], 0.1)
+    ensure
+      SidekiqIteration.default_retry_backoff = previous_backoff
     end
 
     test "does not pushed back to queue if not throttle" do

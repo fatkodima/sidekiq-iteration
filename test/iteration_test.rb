@@ -482,6 +482,25 @@ module SidekiqIteration
       assert_equal([1, 3, 8], ArrayJob.current_run_iterations)
     end
 
+    class IterateUntilMaxRuntimeJob < SimpleIterationJob
+      self.max_job_runtime = 0.001
+
+      def build_enumerator(*)
+        (1..).to_enum
+      end
+
+      def each_iteration(*)
+      end
+    end
+
+    test "interrupted job uses default_retry_backoff" do
+      retry_backoff = SidekiqIteration.default_retry_backoff
+      IterateUntilMaxRuntimeJob.perform_inline
+
+      job = peek_into_queue
+      assert_in_delta(Time.now.to_f + retry_backoff, job["at"], 0.1)
+    end
+
     private
       def assert_jobs_in_queue(size)
         assert_equal(size, Sidekiq::Job.jobs.size)

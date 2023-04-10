@@ -102,3 +102,5 @@ class TestCase < Minitest::Test
     end
   end
 end
+
+SidekiqIteration.default_retry_backoff = 10.seconds

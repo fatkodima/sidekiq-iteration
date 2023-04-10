@@ -22,6 +22,17 @@ module SidekiqIteration
     #
     attr_accessor :max_job_runtime
 
+    # Configures a delay duration to wait before resuming an interrupted job.
+    #
+    # @example
+    #   SidekiqIteration.default_retry_backoff = 10.seconds
+    #
+    # Defaults to nil which means interrupted jobs will be retried immediately.
+    # This value will be ignored when an interruption is raised by a throttle enumerator,
+    # where the throttle backoff value will take precedence over this setting.
+    #
+    attr_accessor :default_retry_backoff
+
     # Set a custom logger for sidekiq-iteration.
     # Defaults to `Sidekiq.logger`.
     #
