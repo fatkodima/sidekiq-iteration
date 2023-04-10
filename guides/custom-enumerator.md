@@ -2,6 +2,17 @@
 
 Iteration leverages the [`Enumerator`](https://ruby-doc.org/core-3.1.2/Enumerator.html) pattern from the Ruby standard library, which allows us to use almost any resource as a collection to iterate.
 
+Before writing an enumerator, it is important to understand [how Iteration works](iteration-how-it-works.md) and how
+your enumerator will be used by it. An enumerator must `yield` two things in the following order as positional
+arguments:
+- An object to be processed in a job `each_iteration` method
+- A cursor position, which Iteration will persist if `each_iteration` returns succesfully and the job is forced to shut
+  down. It can be any data type your job backend can serialize and deserialize correctly.
+
+A job that includes Iteration is first started with `nil` as the cursor. When resuming an interrupted job, Iteration
+will deserialize the persisted cursor and pass it to the job's `build_enumerator` method, which your enumerator uses to
+find objects that come _after_ the last successfully processed object.
+
 ## Cursorless Enumerator
 
 Consider a custom Enumerator that takes items from a Redis list. Because a Redis list is essentially a queue, we can ignore the cursor:
@@ -23,7 +34,7 @@ class ListJob
     end
   end
 
-  def each_iteration(item)
+  def each_iteration(item_from_redis)
     # ...
   end
 end
@@ -31,14 +42,15 @@ end
 
 ## Enumerator with cursor
 
-But what about iterating based on a cursor? Consider this Enumerator that wraps third party API (Stripe) for paginated iteration:
+For a more complex example, consider this Enumerator that wraps a third party API (Stripe) for paginated iteration and
+stores a string as the cursor position:
 
 ```ruby
 class StripeListEnumerator
   # @param resource [Stripe::APIResource] The type of Stripe object to request
   # @param params [Hash] Query parameters for the request
   # @param options [Hash] Request options, such as API key or version
-  # @param cursor [String] The Stripe ID of the last item iterated over
+  # @param cursor [nil, String] The Stripe ID of the last item iterated over
   def initialize(resource, params: {}, options: {}, cursor:)
     pagination_params = {}
     pagination_params[:starting_after] = cursor unless cursor.nil?
