@@ -33,7 +33,7 @@ Software that is designed for high availability [must be resilient](https://12fa
 - Ruby 2.7+ (if you need support for older ruby, [open an issue](https://github.com/fatkodima/sidekiq-iteration/issues/new))
 - Sidekiq 6+
 
-## Getting started
+## Installation
 
 Add this line to your application's Gemfile:
 
@@ -44,6 +44,8 @@ gem 'sidekiq-iteration'
 And then execute:
 
     $ bundle
+
+## Getting started
 
 In the job, include `SidekiqIteration::Iteration` module and start describing the job with two methods (`build_enumerator` and `each_iteration`) instead of `perform`:
 
