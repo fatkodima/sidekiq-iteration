@@ -184,10 +184,10 @@ class CsvJob
 
   def build_enumerator(import_id, cursor:)
     import = Import.find(import_id)
-    csv_enumereator(import.csv, cursor: cursor)
+    csv_enumerator(import.csv, cursor: cursor)
   end
 
-  def each_iteration(csv_row)
+  def each_iteration(csv_row, import_id)
     # insert csv_row to database
   end
 end
