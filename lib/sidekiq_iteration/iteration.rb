@@ -197,14 +197,14 @@ module SidekiqIteration
           )
         end
 
-        adjust_total_time
         true
+      ensure
+        adjust_total_time
       end
 
       def reenqueue_iteration_job
         SidekiqIteration.logger.info("[SidekiqIteration::Iteration] Interrupting and re-enqueueing the job cursor_position=#{cursor_position}")
 
-        adjust_total_time
         @times_interrupted += 1
 
         arguments = @arguments
