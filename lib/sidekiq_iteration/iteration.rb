@@ -56,10 +56,16 @@ module SidekiqIteration
 
     attr_reader :executions,
       :cursor_position,
-      :start_time,
       :times_interrupted,
-      :total_time,
       :current_run_iterations
+
+    # The time when the job starts running. If the job is interrupted and runs again,
+    # the value is updated.
+    attr_reader :start_time
+
+    # The total time the job has been running, including multiple iterations.
+    # The time isn't reset if the job is interrupted.
+    attr_reader :total_time
 
     # @private
     def initialize
