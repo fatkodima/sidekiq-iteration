@@ -8,7 +8,6 @@ require "logger"
 require "sidekiq-iteration"
 require_relative "support/helpers"
 
-# This connection will do for database-independent bug reports.
 ActiveRecord::Base.establish_connection(adapter: "sqlite3", database: ":memory:")
 
 logger =
