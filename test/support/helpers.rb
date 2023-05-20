@@ -2,7 +2,7 @@
 
 module Helpers
   def self.set_sidekiq_logger(logger)
-    if Sidekiq::VERSION.start_with?("7.0")
+    if Gem::Version.new(Sidekiq::VERSION) >= Gem::Version.new("7.0")
       Sidekiq.default_configuration.logger = logger
     else
       Sidekiq.logger = logger
