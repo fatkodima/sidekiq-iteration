@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.3.0 (2023-05-20)
+
 - Allow a default retry backoff to be configured
 
     ```ruby
