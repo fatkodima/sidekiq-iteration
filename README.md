@@ -4,6 +4,8 @@
 
 Meet Iteration, an extension for [Sidekiq](https://github.com/mperham/sidekiq) that makes your long-running jobs interruptible and resumable, saving all progress that the job has made (aka checkpoint for jobs).
 
+You may consider [`pluck_in_batches`](https://github.com/fatkodima/pluck_in_batches) gem to speedup iterating over large database tables.
+
 ## Background
 
 Imagine the following job:
