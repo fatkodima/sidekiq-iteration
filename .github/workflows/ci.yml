@@ -10,7 +10,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: 3.2.0
+          ruby-version: 3.3
           bundler-cache: true
       - run: bundle exec rubocop
 
@@ -24,7 +24,7 @@ jobs:
         - 6379:6379
     strategy:
       matrix:
-        ruby: ["2.7", "3.0", "3.1", "3.2"]
+        ruby: ["2.7", "3.0", "3.1", "3.2", "3.3"]
         gemfile: [sidekiq_6, sidekiq_7, sidekiq_head]
     env:
       BUNDLE_GEMFILE: gemfiles/${{ matrix.gemfile }}.gemfile
