@@ -18,7 +18,7 @@ module SidekiqIteration
 
     test "yields enumerator when called without a block" do
       enum = build_enumerator
-      assert enum.is_a?(Enumerator)
+      assert_kind_of Enumerator, enum
       assert_nil enum.size
     end
 

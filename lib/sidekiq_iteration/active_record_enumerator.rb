@@ -43,7 +43,7 @@ module SidekiqIteration
 
     def records
       Enumerator.new(-> { records_size }) do |yielder|
-        batches.each do |batch, _|
+        batches.each do |batch, _| # rubocop:disable Style/HashEachMethods
           batch.each do |record|
             @iteration_count += 1
             yielder.yield(record, cursor_value(record))
