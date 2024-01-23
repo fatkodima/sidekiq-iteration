@@ -258,13 +258,6 @@ module SidekiqIteration
           true
         when false, :skip_complete_callback
           false
-        when Array # can be used to return early from the enumerator
-          reason, backoff = completed
-          raise "Unknown reason: #{reason}" unless reason == :retry
-
-          @job_iteration_retry_backoff = backoff
-          @needs_reenqueue = true
-          false
         else
           raise "Unexpected thrown value: #{completed.inspect}"
         end
