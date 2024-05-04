@@ -432,12 +432,12 @@ module SidekiqIteration
       end
 
       def each_iteration(_num)
-        sleep(1)
+        sleep(0.01)
       end
     end
 
     test "global #max_job_runtime" do
-      SidekiqIteration.max_job_runtime = 1.second
+      SidekiqIteration.max_job_runtime = 0.01
       LongRunningJob.perform_inline
 
       assert_jobs_in_queue(1)
@@ -446,7 +446,7 @@ module SidekiqIteration
     end
 
     test "local #max_job_runtime" do
-      LongRunningJob.max_job_runtime = 1.second
+      LongRunningJob.max_job_runtime = 0.01
       LongRunningJob.perform_inline
 
       assert_jobs_in_queue(1)
