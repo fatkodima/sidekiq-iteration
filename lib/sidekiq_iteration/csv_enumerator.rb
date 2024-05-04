@@ -36,7 +36,7 @@ module SidekiqIteration
     #   SidekiqIteration::CsvEnumerator.new(csv).rows(cursor: cursor)
     #
     def initialize(csv)
-      unless csv.instance_of?(CSV)
+      unless defined?(CSV) && csv.instance_of?(CSV)
         raise ArgumentError, "CsvEnumerator.new takes CSV object"
       end
 
