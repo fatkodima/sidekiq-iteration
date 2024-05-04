@@ -101,6 +101,12 @@ class NotifyUsersJob
     # Will be called when the job starts iterating. Called only once, for the first time.
   end
 
+  def around_iteration
+    # Will be called around each iteration.
+    # Can be useful for some metrics collection, performance tracking etc.
+    yield
+  end
+
   def on_resume
     # Called when the job resumes iterating.
   end

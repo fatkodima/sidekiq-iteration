@@ -88,6 +88,12 @@ module SidekiqIteration
     def on_start
     end
 
+    # A hook to override that will be called around each iteration.
+    # Can be useful for some metrics collection, performance tracking etc.
+    def around_iteration
+      yield
+    end
+
     # A hook to override that will be called when the job resumes iterating.
     def on_resume
     end
@@ -178,7 +184,9 @@ module SidekiqIteration
 
         enumerator.each do |object_from_enumerator, index|
           found_record = true
-          each_iteration(object_from_enumerator, *arguments)
+          around_iteration do
+            each_iteration(object_from_enumerator, *arguments)
+          end
           @cursor_position = index
           @current_run_iterations += 1
 

@@ -10,6 +10,7 @@ module SidekiqIteration
 
       cattr_accessor :records_performed, default: []
       cattr_accessor :on_start_called, default: 0
+      cattr_accessor :around_iteration_called, default: 0
       cattr_accessor :on_resume_called, default: 0
       cattr_accessor :on_complete_called, default: 0
       cattr_accessor :on_shutdown_called, default: 0
@@ -21,6 +22,11 @@ module SidekiqIteration
 
       def on_start
         self.class.on_start_called += 1
+      end
+
+      def around_iteration
+        self.class.around_iteration_called += 1
+        yield
       end
 
       def on_resume
@@ -41,6 +47,7 @@ module SidekiqIteration
       SimpleIterationJob.descendants.each do |klass|
         klass.records_performed = []
         klass.on_start_called = 0
+        klass.around_iteration_called = 0
         klass.on_resume_called = 0
         klass.on_complete_called = 0
         klass.on_shutdown_called = 0
@@ -153,8 +160,8 @@ module SidekiqIteration
         active_record_batches_enumerator(Product.all, cursor: cursor, batch_size: 3)
       end
 
-      def each_iteration(record)
-        self.class.records_performed << record
+      def each_iteration(records)
+        self.class.records_performed << records
       end
     end
 
@@ -176,6 +183,7 @@ module SidekiqIteration
       assert_equal(1, BatchActiveRecordIterationJob.records_performed.size)
       assert_equal(3, BatchActiveRecordIterationJob.records_performed.flatten.size)
       assert_equal(1, BatchActiveRecordIterationJob.on_start_called)
+      assert_equal(1, BatchActiveRecordIterationJob.around_iteration_called)
       assert_equal(0, BatchActiveRecordIterationJob.on_resume_called)
 
       job = peek_into_queue
@@ -188,6 +196,7 @@ module SidekiqIteration
       assert_equal(2, BatchActiveRecordIterationJob.records_performed.size)
       assert_equal(6, BatchActiveRecordIterationJob.records_performed.flatten.size)
       assert_equal(1, BatchActiveRecordIterationJob.on_start_called)
+      assert_equal(2, BatchActiveRecordIterationJob.around_iteration_called)
       assert_equal(1, BatchActiveRecordIterationJob.on_resume_called)
 
       job = peek_into_queue
@@ -204,6 +213,7 @@ module SidekiqIteration
       assert_equal(12, BatchActiveRecordIterationJob.records_performed.flatten.size)
 
       assert_equal(1, BatchActiveRecordIterationJob.on_start_called)
+      assert_equal(4, BatchActiveRecordIterationJob.around_iteration_called)
       assert_equal(2, BatchActiveRecordIterationJob.on_resume_called)
       assert_equal(1, BatchActiveRecordIterationJob.on_complete_called)
     end
