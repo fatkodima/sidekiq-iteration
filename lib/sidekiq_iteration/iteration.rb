@@ -20,8 +20,7 @@ module SidekiqIteration
         end
 
         throttle_on(backoff: SidekiqIteration.default_retry_backoff) do
-          defined?(Sidekiq::CLI) &&
-            Sidekiq::CLI.instance.launcher.stopping?
+          SidekiqIteration.stopping
         end
       end
 

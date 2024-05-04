@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require "sidekiq"
+require_relative "sidekiq_iteration/iteration"
+require_relative "sidekiq_iteration/job_retry_patch"
 require_relative "sidekiq_iteration/version"
 
 module SidekiqIteration
@@ -44,8 +46,14 @@ module SidekiqIteration
     def logger
       @logger ||= Sidekiq.logger
     end
+
+    # @private
+    attr_accessor :stopping
   end
 end
 
-require_relative "sidekiq_iteration/iteration"
-require_relative "sidekiq_iteration/job_retry_patch"
+Sidekiq.configure_server do |config|
+  config.on(:quiet) do
+    SidekiqIteration.stopping = true
+  end
+end
