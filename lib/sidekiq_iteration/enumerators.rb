@@ -59,7 +59,7 @@ module SidekiqIteration
     # As a result of this query pattern, if the values in these columns change for the records in scope during
     # iteration, they may be skipped or yielded multiple times depending on the nature of the update and the
     # cursor's value. If the value gets updated to a greater value than the cursor's value, it will get yielded
-    # again. Similarly, if the value gets updated to a lesser value than the curor's value, it will get skipped.
+    # again. Similarly, if the value gets updated to a lesser value than the cursor's value, it will get skipped.
     #
     # @example
     #   def build_enumerator(cursor:)

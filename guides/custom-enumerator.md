@@ -6,7 +6,7 @@ Before writing an enumerator, it is important to understand [how Iteration works
 your enumerator will be used by it. An enumerator must `yield` two things in the following order as positional
 arguments:
 - An object to be processed in a job `each_iteration` method
-- A cursor position, which Iteration will persist if `each_iteration` returns succesfully and the job is forced to shut
+- A cursor position, which Iteration will persist if `each_iteration` returns successfully and the job is forced to shut
   down. It can be any data type your job backend can serialize and deserialize correctly.
 
 A job that includes Iteration is first started with `nil` as the cursor. When resuming an interrupted job, Iteration

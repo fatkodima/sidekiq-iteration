@@ -2,7 +2,7 @@
 
 ## Considerations when writing jobs
 
-* Duration of `#each_iteration`: processing a single element from the enumerator builded in `#build_enumerator` should take less than 25 seconds, or the duration set as a timeout for Sidekiq. It allows the job to be safely interrupted and resumed.
+* Duration of `#each_iteration`: processing a single element from the enumerator built in `#build_enumerator` should take less than 25 seconds, or the duration set as a timeout for Sidekiq. It allows the job to be safely interrupted and resumed.
 * Idempotency of `#each_iteration`: it should be safe to run `#each_iteration` multiple times for the same element from the enumerator. Read more in [this Sidekiq best practice](https://github.com/mperham/sidekiq/wiki/Best-Practices#2-make-your-job-idempotent-and-transactional). It's important if the job errors and you run it again, because the same element that errored the job may be processed again. It especially matters in the situation described above, when the iteration duration exceeds the timeout: if the job is re-enqueued, multiple elements may be processed again.
 
 ## Batch iteration

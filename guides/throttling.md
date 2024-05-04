@@ -25,7 +25,7 @@ class DeleteAccountsThrottledJob
 end
 ```
 
-Note that it’s up to you to define a throttling condition that makes sense for your app.
+Note that it's up to you to define a throttling condition that makes sense for your app.
 For example, `DatabaseStatus.healthy?` can check various MySQL metrics such as replication lag, DB threads, whether DB writes are available, etc.
 
 Jobs can define multiple throttle conditions. Throttle conditions are inherited by descendants, and new conditions will be appended without impacting existing conditions.
