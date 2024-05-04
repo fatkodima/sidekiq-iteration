@@ -17,10 +17,6 @@ module SidekiqIteration
     def array_enumerator(array, cursor:)
       raise ArgumentError, "array must be an Array" unless array.is_a?(Array)
 
-      if defined?(ActiveRecord) && array.any?(ActiveRecord::Base)
-        raise ArgumentError, "array cannot contain ActiveRecord objects"
-      end
-
       array.each_with_index.drop(cursor || 0).to_enum { array.size }
     end
 
