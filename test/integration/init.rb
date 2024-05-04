@@ -3,11 +3,12 @@
 require "sidekiq-iteration"
 require "logger"
 require_relative "jobs"
-require_relative "../support/helpers"
 
 # Mute sidekiq logging.
 unless ENV["VERBOSE"]
-  Helpers.set_sidekiq_logger(nil)
+  Sidekiq.configure_server do |config|
+    config.logger = nil
+  end
 
   module Sidekiq
     class CLI

@@ -6,7 +6,6 @@ require "minitest/autorun"
 require "sidekiq/testing"
 require "logger"
 require "sidekiq-iteration"
-require_relative "support/helpers"
 
 ActiveRecord::Base.establish_connection(adapter: "sqlite3", database: ":memory:")
 
@@ -19,7 +18,10 @@ logger =
 
 ActiveRecord::Base.logger = logger
 ActiveRecord::Migration.verbose = false
-Helpers.set_sidekiq_logger(logger)
+
+Sidekiq.configure_client do |config|
+  config.logger = nil
+end
 
 ActiveRecord::Schema.define do
   create_table :products do |t|
