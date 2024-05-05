@@ -1,5 +1,6 @@
 ## master (unreleased)
 
+- Accept single values as a `:columns` for enumerators
 - Add `around_iteration` hook
 
 ## 0.3.0 (2023-05-20)

@@ -15,7 +15,8 @@ module SidekiqIteration
       end
 
       @primary_key = "#{relation.table_name}.#{relation.primary_key}"
-      @columns = Array(columns&.map(&:to_s) || @primary_key)
+      columns ||= @primary_key
+      @columns = Array(columns).map(&:to_s)
       @primary_key_index = @columns.index(@primary_key) || @columns.index(relation.primary_key)
       @pluck_columns = if @primary_key_index
                          @columns

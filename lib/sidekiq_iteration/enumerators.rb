@@ -24,7 +24,7 @@ module SidekiqIteration
     #
     # @param scope [ActiveRecord::Relation] scope to iterate
     # @param cursor [Object] offset to start iteration from, usually an id
-    # @option options :columns [Array<String, Symbol>] used to build the actual query for iteration,
+    # @option options :columns [Array<String, Symbol>, String, Symbol] used to build the actual query for iteration,
     #   defaults to primary key
     # @option options :batch_size [Integer] (100) size of the batch
     # @option options :order [:asc, :desc] (:asc) specifies iteration order

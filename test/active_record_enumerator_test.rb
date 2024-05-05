@@ -88,8 +88,15 @@ module SidekiqIteration
       assert_equal([products, products.last.id], enum.first)
     end
 
-    test "columns are configurable" do
+    test "single column as array" do
       enum = build_enumerator(columns: [:updated_at]).batches
+      products = Product.order(:updated_at).take(2)
+
+      assert_equal([products, products.last.updated_at.strftime(SQL_TIME_FORMAT)], enum.first)
+    end
+
+    test "single column as symbol" do
+      enum = build_enumerator(columns: :updated_at).batches
       products = Product.order(:updated_at).take(2)
 
       assert_equal([products, products.last.updated_at.strftime(SQL_TIME_FORMAT)], enum.first)
