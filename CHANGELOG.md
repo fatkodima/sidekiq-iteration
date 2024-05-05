@@ -1,5 +1,11 @@
 ## master (unreleased)
 
+- Support ordering using multiple directions for ActiveRecord enumerators
+
+    ```ruby
+    active_record_records_enumerator(..., columns: [:shop_id, :id], order: [:asc, :desc])
+    ```
+
 - Support iterating over ActiveRecord models with composite primary keys
 
 - Use Arel to generate SQL in ActiveRecord enumerator

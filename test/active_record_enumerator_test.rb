@@ -161,7 +161,7 @@ module SidekiqIteration
       assert_equal(expected_ids, records.map(&:id))
     end
 
-    test "order is configurable" do
+    test ":order with single direction" do
       enum = build_enumerator(order: :desc).batches
       product_batches = Product.order(id: :desc).take(4).in_groups_of(2).map { |products| [products, products.last.id] }
 
@@ -170,11 +170,32 @@ module SidekiqIteration
       end
     end
 
+    test ":order with multiple directions" do
+      enum = build_enumerator(relation: Order.all, order: [:asc, :desc]).records
+      orders = Order.order(shop_id: :asc, id: :desc).to_a
+      assert_equal(orders.size, enum.size)
+
+      enum.each_with_index do |(element, cursor), index|
+        order = orders[index]
+        assert_equal(order, element)
+        assert_equal([order.shop_id, order[:id]], cursor)
+      end
+    end
+
     test "raises on invalid order" do
-      error = assert_raises(ArgumentError) do
+      assert_raises_with_message(ArgumentError, ":order must be :asc or :desc") do
         build_enumerator(order: :invalid)
       end
-      assert_equal ":order must be :asc or :desc, got :invalid", error.message
+
+      assert_raises_with_message(ArgumentError, ":order must be :asc or :desc") do
+        build_enumerator(order: [:asc, :invalid])
+      end
+    end
+
+    test "raises on mismatched order array size" do
+      assert_raises_with_message(ArgumentError, ":order must include a direction for each batching column") do
+        build_enumerator(order: [:asc, :desc])
+      end
     end
 
     test "can be resumed" do

@@ -17,13 +17,16 @@ module SidekiqIteration
       end
 
       @relation = relation
-
-      unless order == :asc || order == :desc
-        raise ArgumentError, ":order must be :asc or :desc, got #{order.inspect}"
-      end
-
       @primary_key = relation.primary_key
       columns = Array(columns || @primary_key).map(&:to_s)
+
+      if (Array(order) - [:asc, :desc]).any?
+        raise ArgumentError, ":order must be :asc or :desc or an array consisting of :asc or :desc, got #{order.inspect}"
+      end
+
+      if order.is_a?(Array) && order.size != columns.size
+        raise ArgumentError, ":order must include a direction for each batching column"
+      end
 
       @primary_key_index = primary_key_index(columns, relation)
       if @primary_key_index.nil? || (composite_primary_key? && @primary_key_index.any?(nil))
@@ -31,7 +34,7 @@ module SidekiqIteration
       end
 
       @batch_size = batch_size
-      @order = order
+      @order = batch_order(columns, order)
       @cursor = Array(cursor)
 
       if @cursor.present? && @cursor.size != columns.size
@@ -55,7 +58,7 @@ module SidekiqIteration
       end
 
       @columns = columns
-      ordering = @columns.to_h { |column| [column, @order] }
+      ordering = @columns.zip(@order).to_h
       @base_relation = relation.reorder(ordering)
       @iteration_count = 0
     end
@@ -102,6 +105,14 @@ module SidekiqIteration
           indexes
         else
           indexes.first
+        end
+      end
+
+      def batch_order(columns, order)
+        if order.is_a?(Array)
+          order
+        else
+          [order] * columns.size
         end
       end
 
@@ -210,19 +221,18 @@ module SidekiqIteration
       end
 
       def cursor_operators
-        leading_operator = @order == :asc ? :gt : :lt
-
         # Start from the record pointed by cursor when just starting.
-        last_operator =
-          if @order == :asc
-            first_iteration? ? :gteq : :gt
+        @columns.zip(@order).map do |column, order|
+          if column == @columns.last
+            if order == :asc
+              first_iteration? ? :gteq : :gt
+            else
+              first_iteration? ? :lteq : :lt
+            end
           else
-            first_iteration? ? :lteq : :lt
+            order == :asc ? :gt : :lt
           end
-
-        operators = [leading_operator] * (@columns.count - 1)
-        operators << last_operator
-        operators
+        end
       end
 
       def increment_iteration
