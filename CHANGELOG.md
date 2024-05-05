@@ -1,5 +1,10 @@
 ## master (unreleased)
 
+- Use Arel to generate SQL in ActiveRecord enumerator
+
+    Previously, the enumerator coerced numeric ids to a string value (e.g.: `... AND id > '1'`),
+    which can cause problems on some DBMSes (like BigQuery).
+
 - Enforce explicitly passed to ActiveRecord enumerators `:columns` value to include a primary key
 
     Previously, the primary key column was added implicitly if it was not in the list.

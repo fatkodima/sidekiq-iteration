@@ -46,7 +46,7 @@ end
 def insert_fixtures
   products = 10.times.map do |i|
     time = (10 - i - 1).seconds.ago
-    { name: "Apple #{i + 1}", created_at: time, updated_at: time }
+    { id: i + 1, name: "Apple #{i + 1}", created_at: time, updated_at: time }
   end
   Product.insert_all!(products)
 

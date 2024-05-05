@@ -16,6 +16,8 @@ module SidekiqIteration
           "You can use other ways to limit the number of rows, e.g. a WHERE condition on the primary key column."
       end
 
+      @relation = relation
+
       unless order == :asc || order == :desc
         raise ArgumentError, ":order must be :asc or :desc, got #{order.inspect}"
       end
@@ -34,6 +36,22 @@ module SidekiqIteration
         raise ArgumentError, ":cursor must include values for all the columns from :columns"
       end
 
+      if columns.any?(/\W/)
+        arel_columns = columns.map.with_index do |column, i|
+          arel_column(column).as("cursor_column_#{i + 1}")
+        end
+        @cursor_columns = arel_columns.map { |column| column.right.to_s }
+
+        relation =
+          if relation.select_values.empty?
+            relation.select(@relation.arel_table[Arel.star], arel_columns)
+          else
+            relation.select(arel_columns)
+          end
+      else
+        @cursor_columns = columns
+      end
+
       @columns = columns
       ordering = @columns.to_h { |column| [column, @order] }
       @base_relation = relation.reorder(ordering)
@@ -44,7 +62,7 @@ module SidekiqIteration
       Enumerator.new(-> { records_size }) do |yielder|
         batches.each do |batch, _| # rubocop:disable Style/HashEachMethods
           batch.each do |record|
-            @iteration_count += 1
+            increment_iteration
             yielder.yield(record, cursor_value(record))
           end
         end
@@ -54,7 +72,7 @@ module SidekiqIteration
     def batches
       Enumerator.new(-> { records_size }) do |yielder|
         while (batch = next_batch(load: true))
-          @iteration_count += 1
+          increment_iteration
           yielder.yield(batch, cursor_value(batch.last))
         end
       end
@@ -63,7 +81,7 @@ module SidekiqIteration
     def relations
       Enumerator.new(-> { relations_size }) do |yielder|
         while (batch = next_batch(load: false))
-          @iteration_count += 1
+          increment_iteration
           yielder.yield(batch, unwrap_array(@cursor))
         end
       end
@@ -79,6 +97,14 @@ module SidekiqIteration
         end
       end
 
+      def arel_column(column)
+        if column.include?(".")
+          Arel.sql(column)
+        else
+          @relation.arel_table[column]
+        end
+      end
+
       def records_size
         @base_relation.count(:all)
       end
@@ -89,8 +115,8 @@ module SidekiqIteration
 
       def next_batch(load:)
         batch_relation = @base_relation.limit(@batch_size)
-        if conditions.any?
-          batch_relation = batch_relation.where(*conditions)
+        if @cursor.present?
+          batch_relation = apply_cursor(batch_relation)
         end
 
         records = nil
@@ -106,9 +132,7 @@ module SidekiqIteration
         cursor = cursor_values.last
         return unless cursor.present?
 
-        # The primary key was plucked, but original cursor did not include it, so we should remove it
-        cursor.pop unless @primary_key_index
-        @cursor = Array.wrap(cursor)
+        @cursor = Array(cursor)
 
         # Yields relations by selecting the primary keys of records in the batch.
         # Post.where(published: nil) results in an enumerator of relations like:
@@ -119,19 +143,12 @@ module SidekiqIteration
       end
 
       def pluck_columns(batch)
-        columns =
-          if batch.is_a?(Array)
-            @columns.map { |column| column.to_s.split(".").last }
-          else
-            @columns
-          end
-
-        if columns.size == 1 # only the primary key
-          column_values = batch.pluck(columns.first)
+        if @cursor_columns.size == 1 # only the primary key
+          column_values = batch.pluck(@cursor_columns.first)
           return [column_values, column_values]
         end
 
-        column_values = batch.pluck(*columns)
+        column_values = batch.pluck(*@cursor_columns)
         primary_key_values = column_values.map { |values| values[@primary_key_index] }
 
         column_values = serialize_column_values(column_values)
@@ -139,43 +156,32 @@ module SidekiqIteration
       end
 
       def cursor_value(record)
-        positions = @columns.map do |column|
-          attribute_name = column.to_s.split(".").last
-          column_value(record[attribute_name])
+        positions = @cursor_columns.map do |column|
+          column_value(record[column])
         end
 
         unwrap_array(positions)
       end
 
-      def conditions
-        return [] if @cursor.empty?
+      # (x, y) >= (a, b) iff (x > a or (x = a and y >= b))
+      # (x, y) <= (a, b) iff (x < a or (x = a and y <= b))
+      def apply_cursor(relation)
+        arel_columns = @columns.map { |column| arel_column(column) }
+        cursor_positions = arel_columns.zip(@cursor, cursor_operators)
 
-        binds = []
-        sql = build_starts_after_conditions(0, binds)
-
-        # Start from the record pointed by cursor.
-        # We use the property that `>=` is equivalent to `> or =`.
-        if @iteration_count == 0
-          binds.unshift(*@cursor)
-          columns_equality = @columns.map { |column| "#{column} = ?" }.join(" AND ")
-          sql = "(#{columns_equality}) OR (#{sql})"
+        where_clause = nil
+        cursor_positions.reverse_each.with_index do |(arel_column, value, operator), index|
+          where_clause =
+            if index == 0
+              arel_column.public_send(operator, value)
+            else
+              arel_column.public_send(operator, value).or(
+                arel_column.eq(value).and(where_clause),
+              )
+            end
         end
 
-        [sql, *binds]
-      end
-
-      # (x, y) > (a, b) iff (x > a or (x = a and y > b))
-      # (x, y) < (a, b) iff (x < a or (x = a and y < b))
-      def build_starts_after_conditions(index, binds)
-        column = @columns[index]
-
-        if index < @cursor.size - 1
-          binds << @cursor[index] << @cursor[index]
-          "#{column} #{@order == :asc ? '>' : '<'} ? OR (#{column} = ? AND (#{build_starts_after_conditions(index + 1, binds)}))"
-        else
-          binds << @cursor[index]
-          @order == :asc ? "#{column} > ?" : "#{column} < ?"
-        end
+        relation.where(where_clause)
       end
 
       def serialize_column_values(column_values)
@@ -188,6 +194,30 @@ module SidekiqIteration
         else
           value
         end
+      end
+
+      def cursor_operators
+        leading_operator = @order == :asc ? :gt : :lt
+
+        # Start from the record pointed by cursor when just starting.
+        last_operator =
+          if @order == :asc
+            first_iteration? ? :gteq : :gt
+          else
+            first_iteration? ? :lteq : :lt
+          end
+
+        operators = [leading_operator] * (@columns.count - 1)
+        operators << last_operator
+        operators
+      end
+
+      def increment_iteration
+        @iteration_count += 1
+      end
+
+      def first_iteration?
+        @iteration_count == 0
       end
 
       def unwrap_array(array)

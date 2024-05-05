@@ -88,6 +88,14 @@ module SidekiqIteration
       assert_equal([products, products.last.id], enum.first)
     end
 
+    test "paginates using integer conditionals for primary key when no columns are defined" do
+      enum = build_enumerator(batch_size: 1).records
+      queries = track_queries do
+        enum.take(2)
+      end
+      assert queries.any?(/"products"\."id" > 1/)
+    end
+
     test "single column as array" do
       enum = build_enumerator(columns: [:id]).batches
       products = Product.order(:id).take(2)
@@ -123,6 +131,14 @@ module SidekiqIteration
       assert_match(/\ASELECT "products"."updated_at", "products"."id" FROM/i, queries.first)
     end
 
+    test "namespaced columns on a join relation" do
+      relation = Product.joins(:comments)
+      enum = build_enumerator(relation: relation, columns: [:id, "comments.id"]).records
+      records = enum.to_a.map(&:first)
+      expected_ids = relation.order(:id, "comments.id").ids
+      assert_equal(expected_ids, records.map(&:id))
+    end
+
     test "order is configurable" do
       enum = build_enumerator(order: :desc).batches
       product_batches = Product.order(id: :desc).take(4).in_groups_of(2).map { |products| [products, products.last.id] }
@@ -143,7 +159,11 @@ module SidekiqIteration
       one, two, three, four = Product.order(:id).take(4)
       enum = build_enumerator(cursor: one.id).batches
 
-      assert_equal([[one, two], two.id], enum.first)
+      queries = track_queries do
+        assert_equal([[one, two], two.id], enum.first)
+      end
+      assert queries.any?(/"products"\."id" >= 1/)
+
       assert_equal([[three, four], four.id], enum.first)
     end
 
