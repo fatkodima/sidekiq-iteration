@@ -10,33 +10,31 @@ module SidekiqIteration
         raise ArgumentError, "relation must be an ActiveRecord::Relation"
       end
 
-      unless order == :asc || order == :desc
-        raise ArgumentError, ":order must be :asc or :desc, got #{order.inspect}"
-      end
-
-      @primary_key = "#{relation.table_name}.#{relation.primary_key}"
-      columns ||= @primary_key
-      @columns = Array(columns).map(&:to_s)
-      @primary_key_index = @columns.index(@primary_key) || @columns.index(relation.primary_key)
-      @pluck_columns = if @primary_key_index
-                         @columns
-                       else
-                         @columns + [@primary_key]
-                       end
-      @batch_size = batch_size
-      @order = order
-      @cursor = Array.wrap(cursor)
-      raise ArgumentError, "Must specify at least one column" if @columns.empty?
-      if relation.joins_values.present? && !@columns.all?(/\./)
-        raise ArgumentError, "You need to specify fully-qualified columns if you join a table"
-      end
-
       if relation.arel.orders.present? || relation.arel.taken.present?
         raise ArgumentError,
           "The relation cannot use ORDER BY or LIMIT due to the way how iteration with a cursor is designed. " \
           "You can use other ways to limit the number of rows, e.g. a WHERE condition on the primary key column."
       end
 
+      unless order == :asc || order == :desc
+        raise ArgumentError, ":order must be :asc or :desc, got #{order.inspect}"
+      end
+
+      @primary_key = relation.primary_key
+      columns = Array(columns || @primary_key).map(&:to_s)
+
+      @primary_key_index = primary_key_index(columns, relation)
+      raise ArgumentError, ":columns must include a primary key columns" unless @primary_key_index
+
+      @batch_size = batch_size
+      @order = order
+      @cursor = Array(cursor)
+
+      if @cursor.present? && @cursor.size != columns.size
+        raise ArgumentError, ":cursor must include values for all the columns from :columns"
+      end
+
+      @columns = columns
       ordering = @columns.to_h { |column| [column, @order] }
       @base_relation = relation.reorder(ordering)
       @iteration_count = 0
@@ -72,6 +70,15 @@ module SidekiqIteration
     end
 
     private
+      def primary_key_index(columns, relation)
+        primary_key = relation.primary_key
+
+        columns.index do |column|
+          column == primary_key ||
+            (column.include?(relation.table_name) && column.include?(primary_key))
+        end
+      end
+
       def records_size
         @base_relation.count(:all)
       end
@@ -114,9 +121,9 @@ module SidekiqIteration
       def pluck_columns(batch)
         columns =
           if batch.is_a?(Array)
-            @pluck_columns.map { |column| column.to_s.split(".").last }
+            @columns.map { |column| column.to_s.split(".").last }
           else
-            @pluck_columns
+            @columns
           end
 
         if columns.size == 1 # only the primary key
@@ -125,10 +132,9 @@ module SidekiqIteration
         end
 
         column_values = batch.pluck(*columns)
-        primary_key_index = @primary_key_index || -1
-        primary_key_values = column_values.map { |values| values[primary_key_index] }
+        primary_key_values = column_values.map { |values| values[@primary_key_index] }
 
-        serialize_column_values!(column_values)
+        column_values = serialize_column_values(column_values)
         [column_values, primary_key_values]
       end
 
@@ -168,16 +174,12 @@ module SidekiqIteration
           "#{column} #{@order == :asc ? '>' : '<'} ? OR (#{column} = ? AND (#{build_starts_after_conditions(index + 1, binds)}))"
         else
           binds << @cursor[index]
-          if @columns.size == @cursor.size
-            @order == :asc ? "#{column} > ?" : "#{column} < ?"
-          else
-            @order == :asc ? "#{column} >= ?" : "#{column} <= ?"
-          end
+          @order == :asc ? "#{column} > ?" : "#{column} < ?"
         end
       end
 
-      def serialize_column_values!(column_values)
-        column_values.map! { |values| values.map! { |value| column_value(value) } }
+      def serialize_column_values(column_values)
+        column_values.map { |values| values.map { |value| column_value(value) } }
       end
 
       def column_value(value)

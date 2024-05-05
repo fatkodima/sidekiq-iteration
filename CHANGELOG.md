@@ -1,6 +1,18 @@
 ## master (unreleased)
 
-- Accept single values as a `:columns` for enumerators
+- Enforce explicitly passed to ActiveRecord enumerators `:columns` value to include a primary key
+
+    Previously, the primary key column was added implicitly if it was not in the list.
+
+    ```ruby
+    # before
+    active_record_records_enumerator(..., columns: [:updated_at])
+
+    # after
+    active_record_records_enumerator(..., columns: [:updated_at, :id])
+    ```
+
+- Accept single values as a `:columns` for ActiveRecord enumerators
 - Add `around_iteration` hook
 
 ## 0.3.0 (2023-05-20)

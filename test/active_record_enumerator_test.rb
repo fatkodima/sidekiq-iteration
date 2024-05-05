@@ -89,17 +89,23 @@ module SidekiqIteration
     end
 
     test "single column as array" do
-      enum = build_enumerator(columns: [:updated_at]).batches
-      products = Product.order(:updated_at).take(2)
+      enum = build_enumerator(columns: [:id]).batches
+      products = Product.order(:id).take(2)
 
-      assert_equal([products, products.last.updated_at.strftime(SQL_TIME_FORMAT)], enum.first)
+      assert_equal([products, products.last.id], enum.first)
     end
 
     test "single column as symbol" do
-      enum = build_enumerator(columns: :updated_at).batches
-      products = Product.order(:updated_at).take(2)
+      enum = build_enumerator(columns: :id).batches
+      products = Product.order(:id).take(2)
 
-      assert_equal([products, products.last.updated_at.strftime(SQL_TIME_FORMAT)], enum.first)
+      assert_equal([products, products.last.id], enum.first)
+    end
+
+    test "raises when columns does not include primary key" do
+      assert_raises_with_message(ArgumentError, ":columns must include a primary key columns") do
+        build_enumerator(columns: :updated_at).batches
+      end
     end
 
     test "multiple columns" do
