@@ -13,7 +13,8 @@ module SidekiqIteration
       products = Product.order(:id).take(3)
       enum.first(3).each_with_index do |(element, cursor), index|
         product = products[index]
-        assert_equal([product, product.id], [element, cursor])
+        assert_equal(product, element)
+        assert_equal(product.id, cursor)
       end
     end
 
@@ -22,6 +23,21 @@ module SidekiqIteration
 
       assert_empty(enum.to_a)
       assert_equal(0, enum.size)
+    end
+
+    test "#records iterates over relation with composite primary key" do
+      enum = build_enumerator(relation: Order.all).records
+      orders = Order.order(:shop_id, :id).to_a
+      assert_equal(orders.size, enum.size)
+
+      enum.each_with_index do |(element, cursor), index|
+        order = orders[index]
+        assert_equal(order, element)
+
+        # Need to use `order[:id]` (or `order.id_value`) because `order.id`
+        # returns a primary key value (not a value of an `id` column).
+        assert_equal([order.shop_id, order[:id]], cursor)
+      end
     end
 
     test "#batches yields batches of records with the last record's cursor position" do
@@ -113,6 +129,12 @@ module SidekiqIteration
     test "raises when columns does not include primary key" do
       assert_raises_with_message(ArgumentError, ":columns must include a primary key columns") do
         build_enumerator(columns: :updated_at).batches
+      end
+    end
+
+    test "raises when columns does not include all columns of the composite primary key" do
+      assert_raises_with_message(ArgumentError, ":columns must include a primary key columns") do
+        build_enumerator(relation: Order.all, columns: :id).batches
       end
     end
 

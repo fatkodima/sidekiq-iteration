@@ -26,7 +26,9 @@ module SidekiqIteration
       columns = Array(columns || @primary_key).map(&:to_s)
 
       @primary_key_index = primary_key_index(columns, relation)
-      raise ArgumentError, ":columns must include a primary key columns" unless @primary_key_index
+      if @primary_key_index.nil? || (composite_primary_key? && @primary_key_index.any?(nil))
+        raise ArgumentError, ":columns must include a primary key columns"
+      end
 
       @batch_size = batch_size
       @order = order
@@ -89,11 +91,17 @@ module SidekiqIteration
 
     private
       def primary_key_index(columns, relation)
-        primary_key = relation.primary_key
+        indexes = Array(@primary_key).map do |pk_column|
+          columns.index do |column|
+            column == pk_column ||
+              (column.include?(relation.table_name) && column.include?(pk_column))
+          end
+        end
 
-        columns.index do |column|
-          column == primary_key ||
-            (column.include?(relation.table_name) && column.include?(primary_key))
+        if composite_primary_key?
+          indexes
+        else
+          indexes.first
         end
       end
 
@@ -149,7 +157,12 @@ module SidekiqIteration
         end
 
         column_values = batch.pluck(*@cursor_columns)
-        primary_key_values = column_values.map { |values| values[@primary_key_index] }
+        primary_key_values =
+          if composite_primary_key?
+            column_values.map { |values| values.values_at(*@primary_key_index) }
+          else
+            column_values.map { |values| values[@primary_key_index] }
+          end
 
         column_values = serialize_column_values(column_values)
         [column_values, primary_key_values]
@@ -218,6 +231,10 @@ module SidekiqIteration
 
       def first_iteration?
         @iteration_count == 0
+      end
+
+      def composite_primary_key?
+        @primary_key.is_a?(Array)
       end
 
       def unwrap_array(array)

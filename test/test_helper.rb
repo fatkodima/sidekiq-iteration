@@ -33,6 +33,11 @@ ActiveRecord::Schema.define do
     t.string :content
     t.belongs_to :product
   end
+
+  create_table :orders, primary_key: [:shop_id, :id] do |t|
+    t.integer :shop_id
+    t.integer :id
+  end
 end
 
 class Product < ActiveRecord::Base
@@ -41,6 +46,9 @@ end
 
 class Comment < ActiveRecord::Base
   belongs_to :product
+end
+
+class Order < ActiveRecord::Base
 end
 
 def insert_fixtures
@@ -56,6 +64,15 @@ def insert_fixtures
   end.flatten
 
   Comment.insert_all!(comments)
+
+  orders = [
+    { shop_id: 3, id: 2 },
+    { shop_id: 2, id: 1 },
+    { shop_id: 3, id: 4 },
+    { shop_id: 1, id: 3 },
+    { shop_id: 3, id: 5 },
+  ]
+  Order.insert_all!(orders)
 end
 
 insert_fixtures

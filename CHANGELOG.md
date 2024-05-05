@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Support iterating over ActiveRecord models with composite primary keys
+
 - Use Arel to generate SQL in ActiveRecord enumerator
 
     Previously, the enumerator coerced numeric ids to a string value (e.g.: `... AND id > '1'`),
