@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.4.0 (2024-05-10)
+
 - Support ordering using multiple directions for ActiveRecord enumerators
 
     ```ruby
