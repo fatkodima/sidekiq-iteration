@@ -236,9 +236,9 @@ module SidekiqIteration
         raise ArgumentError, <<~MSG
           #build_enumerator is expected to return Enumerator object, but returned #{enum.class}.
           Example:
-             def build_enumerator(params, cursor:)
-              enumerator_builder.active_record_on_records(
-                Shop.find(params[:shop_id]).products,
+            def build_enumerator(params, cursor:)
+              active_record_records_enumerator(
+                Shop.find(params["shop_id"]).products,
                 cursor: cursor
               )
             end
