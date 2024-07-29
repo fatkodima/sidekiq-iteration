@@ -32,7 +32,7 @@ Software that is designed for high availability [must be resilient](https://12fa
 
 ## Requirements
 
-- Ruby 2.7+ (if you need support for older ruby, [open an issue](https://github.com/fatkodima/sidekiq-iteration/issues/new))
+- Ruby 2.7+
 - Sidekiq 6+
 
 ## Installation
