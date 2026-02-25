@@ -25,7 +25,7 @@ class FailingIterationJob
   include SidekiqIteration::Iteration
 
   sidekiq_options retry: 3
-  sidekiq_retry_in { 1 }
+  sidekiq_retry_in { 0 }
 
   def on_start
     Sidekiq.redis do |conn|

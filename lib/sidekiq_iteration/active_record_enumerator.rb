@@ -78,7 +78,7 @@ module SidekiqIteration
       Enumerator.new(-> { records_size }) do |yielder|
         while (batch = next_batch(load: true))
           increment_iteration
-          yielder.yield(batch, cursor_value(batch.last))
+          yielder.yield(batch, cursor_value(batch.first))
         end
       end
     end

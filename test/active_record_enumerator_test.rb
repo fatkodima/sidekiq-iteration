@@ -40,14 +40,14 @@ module SidekiqIteration
       end
     end
 
-    test "#batches yields batches of records with the last record's cursor position" do
+    test "#batches yields batches of records with the first record's cursor position" do
       enum = build_enumerator.batches
       assert_equal(10, enum.size)
 
       products = Product.order(:id).take(4).each_slice(2).to_a
 
       enum.first(2).each_with_index do |(element, cursor), index|
-        assert_equal([products[index], products[index].last.id], [element, cursor])
+        assert_equal([products[index], products[index].first.id], [element, cursor])
       end
     end
 
@@ -101,7 +101,7 @@ module SidekiqIteration
       enum = build_enumerator(batch_size: 4).batches
       products = Product.order(:id).take(4)
 
-      assert_equal([products, products.last.id], enum.first)
+      assert_equal([products, products.first.id], enum.first)
     end
 
     test "paginates using integer conditionals for primary key when no columns are defined" do
@@ -116,14 +116,14 @@ module SidekiqIteration
       enum = build_enumerator(columns: [:id]).batches
       products = Product.order(:id).take(2)
 
-      assert_equal([products, products.last.id], enum.first)
+      assert_equal([products, products.first.id], enum.first)
     end
 
     test "single column as symbol" do
       enum = build_enumerator(columns: :id).batches
       products = Product.order(:id).take(2)
 
-      assert_equal([products, products.last.id], enum.first)
+      assert_equal([products, products.first.id], enum.first)
     end
 
     test "raises when columns does not include primary key" do
@@ -142,7 +142,7 @@ module SidekiqIteration
       enum = build_enumerator(columns: [:updated_at, :id]).batches
       products = Product.order(:updated_at, :id).take(2)
 
-      assert_equal([products, [products.last.updated_at.strftime(SQL_TIME_FORMAT), products.last.id]], enum.first)
+      assert_equal([products, [products.first.updated_at.strftime(SQL_TIME_FORMAT), products.first.id]], enum.first)
     end
 
     test "columns configured with primary key only queries primary key column once" do
@@ -163,7 +163,7 @@ module SidekiqIteration
 
     test ":order with single direction" do
       enum = build_enumerator(order: :desc).batches
-      product_batches = Product.order(id: :desc).take(4).in_groups_of(2).map { |products| [products, products.last.id] }
+      product_batches = Product.order(id: :desc).take(4).in_groups_of(2).map { |products| [products, products.first.id] }
 
       enum.first(2).each_with_index do |(batch, cursor), index|
         assert_equal(product_batches[index], [batch, cursor])
@@ -203,24 +203,22 @@ module SidekiqIteration
       enum = build_enumerator(cursor: one.id).batches
 
       queries = track_queries do
-        assert_equal([[one, two], two.id], enum.first)
+        assert_equal([[one, two], one.id], enum.first)
       end
       assert queries.any?(/"products"\."id" >= 1/)
 
-      assert_equal([[three, four], four.id], enum.first)
+      assert_equal([[three, four], three.id], enum.first)
     end
 
     test "can be resumed on multiple columns" do
       enum = build_enumerator(columns: [:created_at, :id]).batches
       products = Product.order(:created_at, :id).take(2)
 
-      cursor = [products.last.created_at.strftime(SQL_TIME_FORMAT), products.last.id]
+      cursor = [products.first.created_at.strftime(SQL_TIME_FORMAT), products.first.id]
       assert_equal([products, cursor], enum.first)
 
       enum = build_enumerator(columns: [:created_at, :id], cursor: cursor).batches
-      products = Product.order(:created_at, :id).offset(1).take(2)
-
-      cursor = [products.last.created_at.strftime(SQL_TIME_FORMAT), products.last.id]
+      cursor = [products.first.created_at.strftime(SQL_TIME_FORMAT), products.first.id]
       assert_equal([products, cursor], enum.first)
     end
 

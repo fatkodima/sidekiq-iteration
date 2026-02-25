@@ -19,14 +19,14 @@ module SidekiqIteration
         start_worker_and_wait
 
         assert_equal(1, queue_size)
-        assert_equal(0, iteration_metadata["cursor_position"])
+        assert_equal(1, iteration_metadata["cursor_position"])
         assert_equal(1, iteration_metadata["times_interrupted"])
 
         conn.set("stop_after_num", 2)
         start_worker_and_wait
 
         assert_equal(1, queue_size)
-        assert_equal(2, iteration_metadata["cursor_position"])
+        assert_equal(3, iteration_metadata["cursor_position"])
         assert_equal(2, iteration_metadata["times_interrupted"])
 
         TerminateJob.perform_async
@@ -43,26 +43,27 @@ module SidekiqIteration
       start_worker_and_wait
 
       Sidekiq.redis do |conn|
-        assert_equal(2, iteration_metadata["cursor_position"])
+        assert_equal(3, iteration_metadata["cursor_position"])
         assert_equal(1, iteration_metadata["executions"])
         assert_equal(0, iteration_metadata["times_interrupted"])
-        assert_equal(3, conn.llen("records_performed"))
+        assert_equal(["0", "1", "2"], conn.lrange("records_performed", 0, -1))
         assert_equal(1, conn.get("on_start_called").to_i)
 
         start_worker_and_wait
 
-        assert_equal(4, iteration_metadata["cursor_position"])
+        assert_equal(6, iteration_metadata["cursor_position"])
         assert_equal(2, iteration_metadata["executions"])
         assert_equal(0, iteration_metadata["times_interrupted"])
-        assert_equal(6, conn.llen("records_performed"))
+        assert_equal(["0", "1", "2", "3", "4", "5"], conn.lrange("records_performed", 0, -1))
         assert_equal(1, conn.get("on_start_called").to_i)
         assert_equal(0, conn.get("on_complete_called").to_i)
+
+        # last attempt
+        start_worker_and_wait
+
+        assert_equal(1, Sidekiq::RetrySet.new.size)
+        assert_equal(["0", "1", "2", "3", "4", "5", "6", "7", "8"], conn.lrange("records_performed", 0, -1))
       end
-
-      # last attempt
-      start_worker_and_wait
-
-      assert_equal(0, queue_size)
     end
 
     test "failing non iteration job" do
