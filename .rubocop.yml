@@ -1,4 +1,5 @@
-require: rubocop-minitest
+plugins:
+  - rubocop-minitest
 
 AllCops:
   TargetRubyVersion: 2.7

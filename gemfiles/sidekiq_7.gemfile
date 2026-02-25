@@ -2,4 +2,6 @@
 
 @sidekiq_requirement = "~> 7.0"
 
+gem "connection_pool", "< 3"
+
 eval_gemfile "../Gemfile"

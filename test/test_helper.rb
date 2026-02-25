@@ -3,9 +3,15 @@
 require "active_record"
 require "sqlite3"
 require "minitest/autorun"
-require "sidekiq/testing"
 require "logger"
 require "sidekiq-iteration"
+
+if Gem::Version.new(Sidekiq::VERSION) >= Gem::Version.new("8.1.1")
+  # https://github.com/sidekiq/sidekiq/pull/6931
+  Sidekiq.testing!(:fake)
+else
+  require "sidekiq/testing"
+end
 
 ActiveRecord::Base.establish_connection(adapter: "sqlite3", database: ":memory:")
 
