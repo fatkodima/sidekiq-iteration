@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+## 0.4.1 (2026-02-26)
+
 - Fix processing the same item twice for interrupted jobs
 
 ## 0.4.0 (2024-05-10)

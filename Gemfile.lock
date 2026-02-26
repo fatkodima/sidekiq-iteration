@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    sidekiq-iteration (0.4.0)
+    sidekiq-iteration (0.4.1)
       sidekiq (>= 6.0)
 
 GEM
