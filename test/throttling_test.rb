@@ -53,7 +53,7 @@ module SidekiqIteration
       assert_equal(1, runs_metadata.fetch("cursor_position"))
       assert_equal(1, runs_metadata.fetch("times_interrupted"))
 
-      assert_equal([1, 2], ThrottleJob.iterations_performed)
+      assert_equal([1], ThrottleJob.iterations_performed)
     end
 
     test "pushes job back to the queue with the configured throttle backoff" do

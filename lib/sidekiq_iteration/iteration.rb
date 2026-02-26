@@ -183,11 +183,7 @@ module SidekiqIteration
 
         enumerator.each do |object_from_enumerator, index|
           found_record = true
-          around_iteration do
-            each_iteration(object_from_enumerator, *arguments)
-          end
           @cursor_position = index
-          @current_run_iterations += 1
 
           throttle_condition = find_throttle_condition
           if throttle_condition
@@ -195,6 +191,11 @@ module SidekiqIteration
             @needs_reenqueue = true
             return false
           end
+
+          around_iteration do
+            each_iteration(object_from_enumerator, *arguments)
+          end
+          @current_run_iterations += 1
         end
 
         unless found_record

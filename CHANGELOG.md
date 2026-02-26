@@ -1,5 +1,7 @@
 ## master (unreleased)
 
+- Fix processing the same item twice for interrupted jobs
+
 ## 0.4.0 (2024-05-10)
 
 - Support ordering using multiple directions for ActiveRecord enumerators

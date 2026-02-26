@@ -33,6 +33,9 @@ module SidekiqIteration
           else
             iterate(current_items + [item], current_cursor + [cursor_value], index + 1, &block)
           end
+
+          # Nullify downstream enums cursors on each iteration.
+          @cursor.fill(nil, index + 1)
         end
       end
   end
